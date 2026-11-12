@@ -405,7 +405,8 @@ body.menu-abierto #velo{opacity:1;visibility:visible}
 
   const aviso = t => { const a=$('aviso'); a.textContent=t||''; a.hidden=!t; };
   const estado = t => { $('guardado').textContent=t; };
-  function mem(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){} return null; }
+  const PFX=(window.BBC_SUPABASE&&window.BBC_SUPABASE.entorno==='pruebas')?'pru.':'';
+  function mem(k,v){ k=PFX+k; try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){} return null; }
   let tt; function toast(t){ const el=$('toast'); el.textContent=t; el.hidden=false; clearTimeout(tt); tt=setTimeout(()=>{ el.hidden=true; },3500); }
 
   /* ---- Normalizadores ---- */
@@ -2069,11 +2070,12 @@ const SECN={inicio:'Inicio',carta:'Carta',precios:'Precios',cocina:'Cocina',alma
     if(/already (been )?registered/i.test(m)) return 'Ya hay una cuenta con ese correo. Entra con tu contraseña.';
     if(/rate limit/i.test(m)) return 'Demasiados intentos. Espera unos minutos.';
     if(/password/i.test(m)&&/(least|short|weak)/i.test(m)) return 'La contraseña es demasiado corta o débil.';
-    if(/fetch|network|load failed/i.test(m)) return 'Sin conexión. Revisa internet y vuelve a intentarlo.';
+    if(/fetch|network|load failed/i.test(m)) return navigator.onLine===false ? 'Sin conexión. Revisa internet y vuelve a intentarlo.'
+      : 'No se llega al servidor. Tienes internet, así que revisa la dirección y la clave del archivo config.js, o inténtalo dentro de un minuto.';
     return m||'No se pudo completar. Inténtalo de nuevo.'; };
   const canon = o => JSON.stringify(o, (k,v) => (v&&typeof v==='object'&&!Array.isArray(v)) ? Object.keys(v).sort().reduce((a,x) => { a[x]=v[x]; return a; },{}) : v);
   /* Almacén del dispositivo (IndexedDB): última copia de los datos y cambios pendientes de subir */
-  const idb=(() => { let p; const abrir = () => p||(p=new Promise((ok,ko) => { const q=indexedDB.open('bbc',1); q.onupgradeneeded=() => q.result.createObjectStore('kv'); q.onsuccess=() => ok(q.result); q.onerror=() => ko(q.error); }));
+  const idb=(() => { let p; const abrir = () => p||(p=new Promise((ok,ko) => { const q=indexedDB.open('bbc'+(PFX?'-pruebas':''),1); q.onupgradeneeded=() => q.result.createObjectStore('kv'); q.onsuccess=() => ok(q.result); q.onerror=() => ko(q.error); }));
     const op = (modo,fn) => abrir().then(d => new Promise((ok,ko) => { const tx=d.transaction('kv',modo), rq=fn(tx.objectStore('kv')); tx.oncomplete=() => ok(rq.result); tx.onerror=tx.onabort=() => ko(tx.error); })).catch(() => undefined);
     return {get:k => op('readonly',s => s.get(k)), set:(k,v) => op('readwrite',s => s.put(v,k)), del:k => op('readwrite',s => s.delete(k))}; })();
   const esRed = e => (typeof navigator!=='undefined'&&navigator.onLine===false) || !!(e&&!(e.code&&String(e.code).length>=4)&&/fetch|network|load failed|timed? ?out|aborted/i.test(String(e.message||e)));
@@ -2176,7 +2178,7 @@ const SECN={inicio:'Inicio',carta:'Carta',precios:'Precios',cocina:'Cocina',alma
   });
   let recup=/type=recovery/.test(location.hash+location.search);
   const cacheYo = () => { try{ const y=JSON.parse(mem('bbc.yo')||'null'); return y&&y.id?y:null; }catch(e){ return null; } };
-  function salirNube(){ acMsg('Saliendo…'); const u=cacheYo(); try{ localStorage.removeItem('bbc.yo'); if(u) localStorage.removeItem('bbc.mios.'+u.id); }catch(e){} mios.forEach(m => idb.del('cache.'+m.id));
+  function salirNube(){ acMsg('Saliendo…'); const u=cacheYo(); try{ localStorage.removeItem(PFX+'bbc.yo'); if(u) localStorage.removeItem(PFX+'bbc.mios.'+u.id); }catch(e){} mios.forEach(m => idb.del('cache.'+m.id));
     Promise.resolve(sb.auth.signOut()).catch(() => {}).then(() => { location.reload(); }); }
   function cambioSesion(s,ev){ const u=s&&s.user?s.user:null, id=u?u.id:null;
     if(ev==='PASSWORD_RECOVERY'&&id){ recup=true; if(id===uidAct){ acceso('nueva'); return; } }

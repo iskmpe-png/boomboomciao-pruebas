@@ -1,10 +1,15 @@
-// Boom Boom Ciao · configuración del ENTORNO DE PRUEBAS.
-// 1. Rellena url y key con los datos del proyecto de pruebas de Supabase.
-// 2. Cambia el nombre de este archivo a config.js.
-// 3. Súbelo al repositorio de pruebas, sustituyendo al config.js que viene en el ZIP.
+// Boom Boom Ciao · configuración de este entorno.
+// Este es el único archivo que cambia entre la app real y la de pruebas.
 window.BBC_SUPABASE = {
-  entorno: 'pruebas',               // muestra una franja roja «ENTORNO DE PRUEBAS»
-  url: 'https://supabase.com/dashboard/project/gzyyyldmoruttjuulqjf/settings/api-keys',
-  key: 'sb_publishable_a76usm4JPI2oz4zbpwBPPA_ilph0cGt',
-  legal: { responsable: '', cif: '', direccion: '', email: '', region: 'la Unión Europea' }
+  entorno: 'produccion',            // 'produccion' o 'pruebas'
+  url: 'https://qgjsqwkkrgtrfpxschmn.supabase.co',
+  key: 'sb_publishable_VYGjBgN7J3fJVMSq1Mp1ZA_93REskD6',
+  // Datos para el aviso legal. Rellénalos con los de la empresa.
+  legal: {
+    responsable: '',                // razón social, por ejemplo: Restaurantes Ejemplo S.L.
+    cif: '',
+    direccion: '',
+    email: '',                      // correo de contacto para privacidad
+    region: 'la Unión Europea'      // dónde está el proyecto de Supabase
+  }
 };
