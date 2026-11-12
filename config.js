@@ -1,15 +1,15 @@
-// Boom Boom Ciao · configuración de este entorno.
-// Este es el único archivo que cambia entre la app real y la de pruebas.
+// Boom Boom Ciao · configuración del ENTORNO DE PRUEBAS.
+// Este archivo va en el repositorio boomboomciao-pruebas, con el nombre config.js.
+// NO lo subas al repositorio de la app real: ese tiene el suyo.
 window.BBC_SUPABASE = {
-  entorno: 'produccion',            // 'produccion' o 'pruebas'
-  url: 'https://supabase.com/dashboard/project/gzyyyldmoruttjuulqjf/settings/api-keys',
+  entorno: 'pruebas',               // muestra la franja roja «ENTORNO DE PRUEBAS»
+  url: 'https://gzyyyldmoruttjuulqjf.supabase.co',
   key: 'sb_publishable_a76usm4JPI2oz4zbpwBPPA_ilph0cGt',
-  // Datos para el aviso legal. Rellénalos con los de la empresa.
   legal: {
-    responsable: 'Kevin Molina Esclavo Part Time',                // razón social, por ejemplo: Restaurantes Ejemplo S.L.
+    responsable: '',
     cif: '',
     direccion: '',
-    email: 'iskmpe@gmail.com',                      // correo de contacto para privacidad
-    region: 'la Unión Europea'      // dónde está el proyecto de Supabase
+    email: '',
+    region: 'la Unión Europea'
   }
 };
