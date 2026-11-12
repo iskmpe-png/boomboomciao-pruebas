@@ -6,10 +6,10 @@ window.BBC_SUPABASE = {
   key: 'sb_publishable_a76usm4JPI2oz4zbpwBPPA_ilph0cGt',
   // Datos para el aviso legal. Rellénalos con los de la empresa.
   legal: {
-    responsable: '',                // razón social, por ejemplo: Restaurantes Ejemplo S.L.
+    responsable: 'Kevin Molina Esclavo Part Time',                // razón social, por ejemplo: Restaurantes Ejemplo S.L.
     cif: '',
     direccion: '',
-    email: '',                      // correo de contacto para privacidad
+    email: 'iskmpe@gmail.com',                      // correo de contacto para privacidad
     region: 'la Unión Europea'      // dónde está el proyecto de Supabase
   }
 };
