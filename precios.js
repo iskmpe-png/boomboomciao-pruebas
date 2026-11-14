@@ -31,7 +31,7 @@ function vPrecios() {
       .map((n) => '<option' + (n === prov ? ' selected' : '') + '>' + esc(n) + '</option>')
       .join('') +
     '</select></div>' +
-    '<button class="btn" type="button" data-act="tf-importar">Importar tarifa</button>' +
+    '<button class="btn" type="button" data-act="tf-importar">Importar Excel o fotos</button>' +
     '<button class="btn primary" type="button" data-act="add-prod">' +
     (addProd ? 'Cerrar' : 'Añadir') +
     '</button>' +

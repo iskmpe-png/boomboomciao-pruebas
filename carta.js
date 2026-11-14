@@ -5,6 +5,10 @@ function filtradosCarta() {
   return l.filter((p) => !p.base).concat(l.filter((p) => p.base));
 }
 function vCarta() {
+  if (escImp) {
+    vEscImp();
+    return;
+  }
   if (abierta && plato()) {
     vFicha();
     return;
@@ -14,7 +18,7 @@ function vCarta() {
     $('vista').innerHTML = vacio(
       'Aún no hay ningún plato',
       'Crea el primero: añade sus ingredientes y verás el coste por ración y el precio de venta recomendado.',
-      '<button class="btn primary" type="button" data-act="nuevo-plato">Crear plato</button>',
+      '<div class="acciones" style="justify-content:center"><button class="btn primary" type="button" data-act="nuevo-plato">Crear plato</button><button class="btn" type="button" data-act="ei-importar">Importar escandallos</button></div>',
     );
     return;
   }
@@ -30,6 +34,7 @@ function vCarta() {
     '<div class="field corto"><label for="f-grupo">Carta o menú</label><select id="f-grupo"><option value="">Todo</option>' +
     ks.map((n) => '<option' + (n === grp ? ' selected' : '') + '>' + esc(n) + '</option>').join('') +
     '</select></div>' +
+    '<button class="btn" type="button" data-act="ei-importar">Importar escandallos</button>' +
     '<button class="btn primary" type="button" data-act="nuevo-plato">Nuevo</button>' +
     expHTML(1) +
     '</div>' +

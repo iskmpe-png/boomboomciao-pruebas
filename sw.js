@@ -69,6 +69,7 @@ const BASE = [
   "legal-y-copias.js",
   "grupo.js",
   "tarifas.js",
+  "escandallos.js",
   "manual.js",
   "primeros-pasos.js",
   "buscador.js",

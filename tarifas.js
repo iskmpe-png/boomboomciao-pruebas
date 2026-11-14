@@ -2,12 +2,13 @@
 let tarifa = null;
 const TF_PROMPT =
   'Eres un lector de tarifas, listas de precios y catálogos de proveedores de hostelería en España. Devuelve SOLO JSON con esta forma: ' +
-  '{"proveedor":"","items":[{"nombre":"","proveedor":"","precio":0,"unidad":"kg","formato":""}]}.\n' +
+  '{"proveedor":"","items":[{"nombre":"","proveedor":"","precio":0,"unidad":"kg","formato":""}],"proveedores":[{"nombre":"","telefono":"","email":"","nota":""}]}.\n' +
   'Reglas:\n- "items": una entrada por producto que tenga precio. Ignora cabeceras, totales, direcciones y textos que no sean productos.\n' +
   '- "nombre": el del producto, limpio, sin códigos ni referencias, con mayúscula inicial.\n' +
   '- "precio": sin IVA y por kilo, litro o unidad; número con punto decimal. "unidad" solo puede ser "kg", "l" o "ud".\n' +
   '- Si el precio es por caja, saco, pack o formato y se puede saber cuánto trae (por ejemplo «caja 6 x 1 L» o «saco 25 kg»), calcula el precio por kilo o litro y escribe el formato original en "formato". Si no se puede saber, deja "ud" y el precio del formato.\n' +
   '- "proveedor": el proveedor de esa línea si el documento mezcla varios; si no, déjalo vacío y pon el del documento en el "proveedor" de arriba.\n' +
+  '- "proveedores": los datos de contacto de cada proveedor que aparezcan en el documento: teléfono o WhatsApp, correo y, en "nota", lo demás que sirva para pedir (persona de contacto, días de reparto, pedido mínimo). Si no hay datos de contacto, deja la lista vacía.\n' +
   '- No inventes nada: si un precio no se lee con seguridad, omite esa línea.\n';
 const tfUnidad = (u) => {
   u = norm(u);
@@ -36,7 +37,7 @@ async function importarTarifa() {
   }
   const fs = await pedirArchivo('.xlsx,.xls,.ods,.csv,.tsv,.txt,.pdf,image/*', true);
   if (!fs.length) return;
-  tarifa = { estado: 'leyendo', paso: 'Abriendo ' + (fs.length === 1 ? fs[0].name : fs.length + ' archivos') + '…', items: [], avisos: [] };
+  tarifa = { estado: 'leyendo', paso: 'Abriendo ' + (fs.length === 1 ? fs[0].name : fs.length + ' archivos') + '…', items: [], avisos: [], contactos: {} };
   pintar();
   const trabajos = [];
   for (let n = 0; n < fs.length; n++) {
@@ -69,7 +70,16 @@ async function importarTarifa() {
       });
       if (!tarifa) return;
       if (r && r.proveedor && !provDoc[t.doc]) provDoc[t.doc] = String(r.proveedor).trim();
-      ((r && r.items) || []).forEach((i) => {
+      ((r && Array.isArray(r.proveedores) && r.proveedores) || []).forEach((c) => {
+        const nombre = String((c && c.nombre) || '').trim().slice(0, 80);
+        if (!nombre) return;
+        const k = norm(nombre),
+          a = tarifa.contactos[k] || (tarifa.contactos[k] = { nombre, whatsapp: '', email: '', nota: '' });
+        a.whatsapp = a.whatsapp || String(c.telefono || '').trim().slice(0, 30);
+        a.email = a.email || String(c.email || '').trim().slice(0, 120);
+        a.nota = a.nota || String(c.nota || '').trim().slice(0, 300);
+      });
+      ((r && Array.isArray(r.items) && r.items) || []).forEach((i) => {
         const precio = Math.round((Number(i.precio) || 0) * 1000) / 1000,
           nombre = String(i.nombre || '').trim().slice(0, 120);
         if (!nombre || !(precio > 0)) return;
@@ -84,8 +94,10 @@ async function importarTarifa() {
     }
   }
   if (!tarifa) return;
-  if (!tarifa.items.length) {
-    tarifa = { estado: 'error', msg: tarifa.avisos.join(' ') || 'No encontré productos con precio en esos archivos.' };
+  /* Solo interesan los proveedores que traen algún dato de contacto */
+  tarifa.contactos = Object.keys(tarifa.contactos).map((k) => tarifa.contactos[k]).filter((c) => c.whatsapp || c.email || c.nota);
+  if (!tarifa.items.length && !tarifa.contactos.length) {
+    tarifa = { estado: 'error', msg: tarifa.avisos.join(' ') || 'No encontré productos con precio ni datos de proveedores en esos archivos.' };
     pintar();
     return;
   }
@@ -139,7 +151,7 @@ function vTarifa() {
   }
   if (t.estado === 'error') {
     $('vista').innerHTML =
-      '<section class="card estado"><strong>No se pudo leer la tarifa</strong><span>' + esc(t.msg) + '</span><div class="acciones" style="justify-content:center"><button class="btn primary" type="button" data-act="tf-importar">Probar con otro archivo</button><button class="btn" type="button" data-act="tf-cancelar">Volver</button></div></section>';
+      '<section class="card estado"><strong>No se pudo leer el documento</strong><span>' + esc(t.msg) + '</span><div class="acciones" style="justify-content:center"><button class="btn primary" type="button" data-act="tf-importar">Probar con otro archivo</button><button class="btn" type="button" data-act="tf-cancelar">Volver</button></div></section>';
     return;
   }
   const cuenta = { nuevo: 0, cambio: 0, igual: 0, unidad: 0 };
@@ -147,8 +159,11 @@ function vTarifa() {
   const l = t.items.map((x, k) => [x, k]).filter(([x]) => t.ver === 'todo' || tfEstado(x) === t.ver || (t.ver === 'cambio' && tfEstado(x) === 'unidad')),
     marcados = t.items.filter((x) => x.ok).length;
   $('vista').innerHTML =
-    '<div class="bar"><span class="hint grow"><b>' + t.items.length + ' productos leídos.</b> Revisa, corrige lo que haga falta y aplica. Nada cambia hasta que pulses Aplicar.</span>' +
-    '<button class="btn" type="button" data-act="tf-cancelar">Descartar</button><button class="btn primary" type="button" data-act="tf-aplicar"' + (marcados ? '' : ' disabled') + '>Aplicar ' + marcados + '</button></div>' +
+    '<div class="bar"><span class="hint grow"><b>' + t.items.length + (t.items.length === 1 ? ' producto leído.' : ' productos leídos.') + '</b> Revisa, corrige lo que haga falta y aplica. Nada cambia hasta que pulses Aplicar.</span>' +
+    '<button class="btn" type="button" data-act="tf-cancelar">Descartar</button><button class="btn primary" type="button" data-act="tf-aplicar"' + (marcados || t.contactos.length ? '' : ' disabled') + '>Aplicar ' + (marcados || '') + '</button></div>' +
+    (t.contactos.length
+      ? '<p class="aviso ok">Al aplicar también se guardan los datos de contacto de ' + t.contactos.length + (t.contactos.length === 1 ? ' proveedor: ' : ' proveedores: ') + esc(t.contactos.map((c) => c.nombre).join(', ')) + '. Los que ya tengas escritos no se cambian.</p>'
+      : '') +
     (t.avisos.length ? '<p class="aviso">' + esc(t.avisos.join(' ')) + ' Revisa que no falte nada.</p>' : '') +
     '<div class="seg" role="group" aria-label="Qué ver">' +
     [['todo', 'Todo (' + t.items.length + ')'], ['nuevo', 'Nuevos (' + cuenta.nuevo + ')'], ['cambio', 'Cambian (' + (cuenta.cambio + cuenta.unidad) + ')'], ['igual', 'Sin cambio (' + cuenta.igual + ')']]
@@ -160,9 +175,30 @@ function vTarifa() {
 function aplicarTarifa() {
   const t = tarifa,
     sel = t.items.filter((x) => x.ok && x.nombre.trim() && x.precio > 0);
-  if (!sel.length) return;
+  if (!sel.length && !t.contactos.length) return;
   let nuevos = 0,
-    cambios = 0;
+    cambios = 0,
+    contactos = 0;
+  /* Datos de contacto: se crean los proveedores que falten y se rellenan solo los huecos */
+  t.contactos.forEach((c) => {
+    let p = provDe(c.nombre),
+      toca = false;
+    if (!p) {
+      p = nProv({ id: nuevoId('proveedores'), nombre: c.nombre });
+      S.proveedores.push(p);
+      toca = true;
+    }
+    ['whatsapp', 'email', 'nota'].forEach((k) => {
+      if (!p[k] && c[k]) {
+        p[k] = c[k];
+        toca = true;
+      }
+    });
+    if (toca) {
+      guardar('proveedores', p, true);
+      contactos++;
+    }
+  });
   const ahora = new Date().toISOString(),
     filas = [];
   sel.forEach((x) => {
@@ -196,7 +232,7 @@ function aplicarTarifa() {
   } else filas.forEach((p) => guardar('productos', p, true));
   tarifa = null;
   pintar();
-  toast('Tarifa aplicada: ' + nuevos + (nuevos === 1 ? ' producto nuevo' : ' productos nuevos') + ' y ' + cambios + (cambios === 1 ? ' precio actualizado' : ' precios actualizados') + '.');
+  toast('Tarifa aplicada: ' + nuevos + (nuevos === 1 ? ' producto nuevo' : ' productos nuevos') + ' y ' + cambios + (cambios === 1 ? ' precio actualizado' : ' precios actualizados') + (contactos ? '. Contactos guardados: ' + contactos : '') + '.');
 }
 V.addEventListener('click', (e) => {
   const b = e.target.closest('[data-act]');
