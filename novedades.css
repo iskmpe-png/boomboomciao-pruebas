@@ -1,0 +1,275 @@
+/* Importar tarifas, manual de la casa, buscador, primeros pasos y contraseña visible */
+
+/* Contraseña con ojo */
+.clave {
+  position: relative;
+  display: flex;
+}
+.clave input {
+  flex: 1;
+  min-width: 0;
+  padding-right: 46px;
+}
+.ojo {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.ojo[aria-pressed='true'] {
+  color: var(--accent);
+}
+
+/* Revisión de una tarifa importada */
+.tf-lista {
+  display: flex;
+  flex-direction: column;
+}
+.tf {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 2.4fr) minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.tf:first-child {
+  border-top: 0;
+}
+.tf > input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--accent);
+}
+.tf-n,
+.tf-e {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.tf-n small,
+.tf-e small {
+  font-size: 0.78rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.tf-p {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+.tf-p input {
+  flex: 1 1 60px;
+  min-width: 0;
+}
+.tf-p select {
+  flex: 0 0 82px;
+  width: 82px;
+}
+.tf-e {
+  align-items: flex-start;
+}
+@media (max-width: 640px) {
+  .tf {
+    grid-template-columns: 24px minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .tf-n {
+    grid-column: 2 / -1;
+  }
+  .tf-p {
+    grid-column: 2;
+  }
+}
+
+/* Manual de la casa */
+.man-lista {
+  display: flex;
+  flex-direction: column;
+}
+.man {
+  border-top: 1px solid var(--line);
+  padding: 4px 0;
+}
+.man:first-child {
+  border-top: 0;
+}
+.man summary {
+  cursor: pointer;
+  padding: 10px 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.man-x {
+  max-width: 68ch;
+  padding-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+.man-x ul {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+.man-d {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.man-d:first-child {
+  border-top: 0;
+}
+.man-d > span:first-child {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.man-d b {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.man-d small {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* Buscador general */
+.bus {
+  padding: 6px 12px 12px;
+}
+.bus h3 {
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 14px 0 4px;
+}
+.bus h3 small {
+  letter-spacing: 0;
+  text-transform: none;
+}
+.bus-it {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.bus-it:hover,
+.bus-it:focus-visible {
+  background: var(--bg);
+}
+.bus-it b {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.bus-it small {
+  font-size: 0.8rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* Primeros pasos */
+.pp-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pp-lista li {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.pp-lista li:first-child {
+  border-top: 0;
+}
+.pp-m {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.pp-lista li.hecho .pp-m {
+  background: var(--ok, #2e7d4f);
+  border-color: transparent;
+  color: #fff;
+}
+.pp-lista li.hecho .pp-t b {
+  color: var(--muted);
+  font-weight: 500;
+}
+.pp-t {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.pp-t small {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.pp-copia {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 14px;
+}
+.pp-copia .field {
+  width: 100%;
+  max-width: 340px;
+}
+.check {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  cursor: pointer;
+}
+.check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+/* Uso de la IA en la pantalla de usuarios */
+.us-ia {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+/* Cabecera en móvil: con el botón de buscar no cabe el lema, se deja solo el restaurante y el rol */
+@media (max-width: 560px) {
+  .voz-t {
+    display: none;
+  }
+}

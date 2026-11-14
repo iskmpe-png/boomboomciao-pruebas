@@ -1,0 +1,155 @@
+/* Barra fija de cada sección */
+.bar {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 4;
+  background: var(--bg);
+  padding: 6px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}
+.bar .field {
+  flex: 1 1 140px;
+}
+.bar .corto {
+  flex: 0 1 170px;
+}
+/* Cifras y estados */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.kpi b {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.55rem;
+  line-height: 1.1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--sunken);
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.pill.ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+.pill.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.pill.crit {
+  background: var(--crit-bg);
+  color: var(--crit);
+}
+.chip {
+  display: inline-flex;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+/* Listas compactas */
+.rows {
+  display: flex;
+  flex-direction: column;
+}
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 12px;
+  align-items: center;
+  padding: 9px 2px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  background: transparent;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  width: 100%;
+  color: inherit;
+}
+.rows > .row:first-child {
+  border-top: 0;
+}
+button.row {
+  cursor: pointer;
+}
+.row .n {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.row .n b {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.row .n span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.row .d {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.row .d b {
+  font-weight: 600;
+}
+.mas {
+  align-self: center;
+  margin-top: 8px;
+}
+.editor {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  padding: 12px;
+  background: var(--sunken);
+  border-radius: 12px;
+  margin: 6px 0;
+}
+.editor .wide {
+  grid-column: 1/-1;
+}
+.precio {
+  display: flex;
+  gap: 6px;
+}
+.precio select {
+  width: 84px;
+  flex: none;
+  padding: 0 6px;
+}
