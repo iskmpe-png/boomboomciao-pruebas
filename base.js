@@ -172,4 +172,4 @@ const LIBS = window.claude
       pdf: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
       pdfWorker: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
     }
-  : { xlsx: 'vendor/xlsx.full.min.js', pdf: 'vendor/pdf.min.js', pdfWorker: 'vendor/pdf.worker.min.js' };
+  : { xlsx: 'xlsx.full.min.js', pdf: 'pdf.min.js', pdfWorker: 'pdf.worker.min.js' };

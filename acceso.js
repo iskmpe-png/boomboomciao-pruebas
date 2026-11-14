@@ -5,7 +5,7 @@ function acceso(modo, msg) {
   const a = $('acceso');
   a.hidden = false;
   let h =
-    '<div class="ac-caja"><div class="ac-logo"><img src="img/logo-oro.png" alt="Boom Boom Ciao" width="150" height="63"></div>';
+    '<div class="ac-caja"><div class="ac-logo"><img src="logo-oro.png" alt="Boom Boom Ciao" width="150" height="63"></div>';
   if (modo === 'entrar')
     h +=
       '<h2>Entrar</h2><form id="form-entrar" class="col" novalidate><div class="field"><label for="ac-email">Correo</label><input id="ac-email" type="email" autocomplete="email" inputmode="email" required></div>' +
