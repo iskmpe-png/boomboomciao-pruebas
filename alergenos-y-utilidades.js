@@ -50,7 +50,26 @@ const algBtns = (sel, act) =>
       a[1] +
       '</button>',
   ).join('');
-const famDe = (p) => norm((p.familia || p.nombre).replace(/\(.*?\)/g, ''));
+/* Familia para comparar: el "principio" del nombre. «Huevos camperos L 30 ud» y «Huevo fresco» son la misma. */
+const FAM_VACIAS = new Set('de del la el los las y e o con sin para en al a por kg kgs g gr grs kilo kilos gramos l lt lts litro litros ml cl ud uds und unds unidad unidades caja cajas bandeja bandejas pack bolsa bolsas saco sacos lata latas bote botes botella botellas docena tarrina tarrinas paquete paquetes x aprox'.split(' '));
+/* Con estas palabras no basta la primera: «Aceite de oliva» y «Aceite de girasol» no son lo mismo */
+const FAM_GENERICAS = new Set('aceite queso harina tomate vino salsa carne pan leche nata azucar sal pimienta jamon pasta arroz vinagre crema zumo agua cerveza chocolate pimiento cebolla patata pescado lomo filete pollo ternera cerdo cordero fruta verdura refresco licor cafe te caldo mermelada pure fondo masa base'.split(' '));
+const famSingular = (w) => {
+  if (w.length > 3 && /[^s]s$/.test(w)) {
+    w = w.slice(0, -1);
+    if (/[lnrdj]e$/.test(w) && w.length > 4) w = w.slice(0, -1);
+  }
+  return w;
+};
+const famAuto = (nombre) => {
+  const ws = norm(String(nombre).replace(/\(.*?\)/g, ''))
+    .split(' ')
+    .filter((w) => w && !FAM_VACIAS.has(w) && !/^\d/.test(w))
+    .map(famSingular);
+  if (!ws.length) return norm(nombre);
+  return FAM_GENERICAS.has(ws[0]) && ws[1] ? ws[0] + ' ' + ws[1] : ws[0];
+};
+const famDe = (p) => (p.familia.trim() ? norm(p.familia) : famAuto(p.nombre));
 const alternativas = (p) =>
   (idx().fam.get(famDe(p)) || [])
     .filter((o) => o.id !== p.id && o.unidad === p.unidad && o.precio > 0)
@@ -98,9 +117,11 @@ function abrirPlato(id) {
     window.scrollTo(0, 0);
   } else {
     pendAbrir = true;
-    sub.carta = 'platos';
-    if (location.hash === '#carta-platos') ruta();
-    else location.hash = '#carta-platos';
+    const pl = plato(id),
+      h = '#carta-' + (pl && pl.base ? 'elaboraciones' : 'platos');
+    sub.carta = h.slice(7);
+    if (location.hash === h) ruta();
+    else location.hash = h;
   }
 }
 function usaProd(pl, id, d) {

@@ -38,10 +38,10 @@ function vPanel() {
     mermas = suma(delMes(S.mermas), valM),
     ult = cerradosInv()[0],
     pl = S.platos.filter((p) => !p.base),
-    fcs = pl.map(fcDe).filter((x) => x != null),
+    fcs = pl.map(fcGen).filter((x) => x != null).concat(fcMenus()),
     cr = costeRealMes();
   const peores = pl
-    .map((p) => ({ p: p, fc: fcDe(p) }))
+    .map((p) => ({ p: p, fc: fcGen(p) }))
     .filter((x) => x.fc != null)
     .sort((a, z) => z.fc - a.fc)
     .slice(0, 5);

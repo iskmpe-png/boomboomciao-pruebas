@@ -36,12 +36,12 @@ function kpisGrupo(g) {
     S.productos = g.d.productos;
     sucio();
     const pl = S.platos.filter((p) => !p.base),
-      fcs = pl.map(fcDe).filter((x) => x != null);
+      fcs = pl.map(fcGen).filter((x) => x != null);
     r = {
       n: pl.length,
       fc: fcs.length ? suma(fcs, (x) => x) / fcs.length : null,
       fuera: pl.filter((p) => {
-        const f = fcDe(p);
+        const f = fcGen(p);
         return f != null && f > (p.objetivo || 30);
       }).length,
       compras: suma(

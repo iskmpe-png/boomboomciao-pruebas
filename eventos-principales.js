@@ -198,8 +198,8 @@ V.addEventListener('click', (e) => {
       raciones: 1,
       objetivo: 30,
       iva: 10,
-      grupo: grp && grp !== G_BASE ? grp : '',
-      base: grp === G_BASE,
+      grupo: !enElab() && grp && grp !== G_BASE ? grp : '',
+      base: enElab(),
       ingredientes: [{}],
     });
     S.platos.push(np);

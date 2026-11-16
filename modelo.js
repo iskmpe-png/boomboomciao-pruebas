@@ -8,6 +8,7 @@ const nPlato = (p) => ({
   pvp: Number(p.pvp) || 0,
   elaboracion: String(p.elaboracion || ''),
   base: !!p.base,
+  soloMenu: !!p.soloMenu,
   unidadBase: uni(p.unidadBase),
   grupo: String(p.grupo || ''),
   descripcion: String(p.descripcion || ''),

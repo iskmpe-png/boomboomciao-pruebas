@@ -61,6 +61,19 @@ const fcDe = (p) => {
   const c = costeUd(p);
   return c > 0 ? (c / (p.pvp / (1 + (p.iva || 0) / 100))) * 100 : null;
 };
+/* Food cost que cuenta para la media general: lo que solo se vende dentro de un menú no entra,
+   porque su precio suelto no es real. En su lugar cuenta el food cost del menú entero. */
+const fcGen = (p) => (p.soloMenu ? null : fcDe(p));
+const costeMenu = (e) =>
+  suma(e.platos, (x) => {
+    const p = idx().pl.get(x.id);
+    return p ? x.n * costeUd(p) : 0;
+  });
+const fcMenu = (e) => {
+  const c = costeMenu(e);
+  return e.precio > 0 && c > 0 ? (c / (e.precio / 1.1)) * 100 : null;
+};
+const fcMenus = () => S.eventos.map(fcMenu).filter((x) => x != null);
 const usos = (id) => S.platos.filter((p) => p.ingredientes.some((i) => i.productoId === id)).length;
 const usosBase = (id) => S.platos.filter((p) => p.ingredientes.some((i) => i.baseId === id)).length;
 const rinde = (p) =>
@@ -77,7 +90,9 @@ function abierto(crear) {
 }
 function pillFC(p) {
   const fc = fcDe(p);
-  if (fc == null) return p.base ? '<span class="chip">Base</span>' : '<span class="pill">Sin precio</span>';
+  if (p.base) return '';
+  if (fc == null) return '<span class="pill">' + (p.soloMenu ? 'En menú' : 'Sin precio') + '</span>';
+  if (p.soloMenu) return '<span class="pill">En menú · ' + fNum(fc) + ' %</span>';
   const o = p.objetivo > 0 ? p.objetivo : 30;
   return '<span class="pill ' + (fc <= o ? 'ok' : fc <= o + 5 ? 'warn' : 'crit') + '">' + fNum(fc) + ' %</span>';
 }

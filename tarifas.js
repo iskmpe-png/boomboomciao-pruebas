@@ -1,12 +1,17 @@
 /* ---- Tarifas: cargar la lista de precios de un proveedor desde cualquier documento ---- */
 let tarifa = null;
+/* Regla común para todo lo que lee precios: siempre por kilo, litro o unidad real */
+const IA_FORMATOS =
+  '- Precio por formato: calcula SIEMPRE el precio por kilo, por litro o por unidad suelta, haciendo la división. Ejemplos: «Huevos 30 ud 6,00 €» son 0,20 por unidad ("ud"); «Docena de huevos 2,40 €» son 0,20 por unidad; «Bandeja de 125 g de rúcula 1,50 €» son 12,00 por kilo ("kg"); «Unidad de 400 g 20 €» son 50,00 por kilo; «Caja 6 x 1 L de nata 15,00 €» son 2,50 por litro ("l"); «Saco 25 kg harina 22,50 €» son 0,90 por kilo.\n' +
+  '- Lo que se pesa o se mide va por kilo o litro aunque venga en bandejas, botes, latas o unidades con el peso escrito. Usa "ud" solo para lo que se cuenta por piezas (huevos, panes, limones sueltos) o cuando no hay forma de saber el peso o el volumen.\n';
 const TF_PROMPT =
   'Eres un lector de tarifas, listas de precios y catálogos de proveedores de hostelería en España. Devuelve SOLO JSON con esta forma: ' +
   '{"proveedor":"","items":[{"nombre":"","proveedor":"","precio":0,"unidad":"kg","formato":""}],"proveedores":[{"nombre":"","telefono":"","email":"","nota":""}]}.\n' +
   'Reglas:\n- "items": una entrada por producto que tenga precio. Ignora cabeceras, totales, direcciones y textos que no sean productos.\n' +
   '- "nombre": el del producto, limpio, sin códigos ni referencias, con mayúscula inicial.\n' +
   '- "precio": sin IVA y por kilo, litro o unidad; número con punto decimal. "unidad" solo puede ser "kg", "l" o "ud".\n' +
-  '- Si el precio es por caja, saco, pack o formato y se puede saber cuánto trae (por ejemplo «caja 6 x 1 L» o «saco 25 kg»), calcula el precio por kilo o litro y escribe el formato original en "formato". Si no se puede saber, deja "ud" y el precio del formato.\n' +
+  IA_FORMATOS +
+  '- Escribe el formato original en "formato" (por ejemplo «bandeja 125 g» o «caja 30 ud»). Si no se puede saber cuánto trae, deja "ud" y el precio del formato.\n' +
   '- "proveedor": el proveedor de esa línea si el documento mezcla varios; si no, déjalo vacío y pon el del documento en el "proveedor" de arriba.\n' +
   '- "proveedores": los datos de contacto de cada proveedor que aparezcan en el documento: teléfono o WhatsApp, correo y, en "nota", lo demás que sirva para pedir (persona de contacto, días de reparto, pedido mínimo). Si no hay datos de contacto, deja la lista vacía.\n' +
   '- No inventes nada: si un precio no se lee con seguridad, omite esa línea.\n';
@@ -58,6 +63,7 @@ async function importarTarifa() {
     return;
   }
   const provDoc = {}; // proveedor de cada archivo, para las líneas que no lo traen
+  let seguidos = 0;
   for (let k = 0; k < trabajos.length; k++) {
     if (!tarifa) return; // cancelado
     tarifa.paso = 'Leyendo precios: parte ' + (k + 1) + ' de ' + trabajos.length + '…';
@@ -90,14 +96,19 @@ async function importarTarifa() {
         tarifa.avisos.push(errIA(e));
         break;
       }
+      /* Si la IA falla dos veces seguidas no tiene sentido seguir: se enseña el motivo real */
+      tarifa.fallo = errIA(e);
+      if (++seguidos >= 2) break;
       tarifa.avisos.push('Una parte del documento no se pudo leer (' + (k + 1) + ' de ' + trabajos.length + ').');
+      continue;
     }
+    seguidos = 0;
   }
   if (!tarifa) return;
   /* Solo interesan los proveedores que traen algún dato de contacto */
   tarifa.contactos = Object.keys(tarifa.contactos).map((k) => tarifa.contactos[k]).filter((c) => c.whatsapp || c.email || c.nota);
   if (!tarifa.items.length && !tarifa.contactos.length) {
-    tarifa = { estado: 'error', msg: tarifa.avisos.join(' ') || 'No encontré productos con precio ni datos de proveedores en esos archivos.' };
+    tarifa = { estado: 'error', msg: tarifa.fallo || tarifa.avisos.join(' ') || 'No encontré productos con precio ni datos de proveedores en esos archivos.' };
     pintar();
     return;
   }

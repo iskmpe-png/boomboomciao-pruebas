@@ -17,10 +17,11 @@ function precioHTML(i, k) {
 function notaIng(i) {
   const pr = prod(i.productoId),
     b = i.merma > 0 && i.cantidad > 0 ? '<span>bruto ' + fNum(bruto(i)) + ' ' + UD[un(i)] + '</span>' : '';
-  if (pr) return (pr.proveedor ? '<span class="chip">' + esc(pr.proveedor) + '</span>' : '') + b;
+  const cv = '<button class="link" type="button" data-act="conv-ud">Cambiar unidad</button>';
+  if (pr) return (pr.proveedor ? '<span class="chip">' + esc(pr.proveedor) + '</span>' : '') + cv + b;
   if (baseDe(i)) return '<span class="chip">Elaboración de la casa</span>' + b;
   if (i.nombre.trim() && i.precio > 0)
-    return '<button class="link" type="button" data-act="guardar-prod">Guardar en Precios</button>' + b;
+    return '<button class="link" type="button" data-act="guardar-prod">Guardar en Precios</button>' + cv + b;
   return b;
 }
 const filaIng = (i, k) =>
@@ -50,7 +51,7 @@ const filaIng = (i, k) =>
 function vFicha() {
   const p = plato();
   $('vista').innerHTML =
-    '<div class="bar"><button class="btn" type="button" data-act="volver">← Carta</button><div class="resumen" aria-live="polite"><b class="g" id="o-racion"></b><span id="o-uni"></span><span class="pill" id="o-pill"></span><span id="o-rec"></span></div>' +
+    '<div class="bar"><button class="btn" type="button" data-act="volver">← ' + (p.base ? 'Elaboraciones' : 'Carta') + '</button><div class="resumen" aria-live="polite"><b class="g" id="o-racion"></b><span id="o-uni"></span><span class="pill" id="o-pill"></span><span id="o-rec"></span></div>' +
     expHTML(1) +
     '</div>' +
     '<div class="dos"><div class="col">' +
@@ -96,6 +97,9 @@ function vFicha() {
         '<div class="field wide"><label for="p-grupo">Carta o menú</label><input id="p-grupo" data-p="grupo" type="text" list="dl-grupos" autocomplete="off" placeholder="Ej. Carta, Brunch, Menú Nochevieja" value="' +
         esc(p.grupo) +
         '"></div>') +
+    (p.base
+      ? ''
+      : '<label class="check wide" for="p-solo"><input type="checkbox" id="p-solo" data-p="soloMenu"' + (p.soloMenu ? ' checked' : '') + '> Solo se vende dentro de un menú (no cuenta en el food cost general)</label>') +
     '<label class="check wide" for="p-base"><input type="checkbox" id="p-base" data-p="base"' +
     (p.base ? ' checked' : '') +
     '> Es una elaboración de la casa (salsa, masa, base)</label>' +
@@ -146,11 +150,11 @@ function calcular() {
     $('o-rec').textContent = cr > 0 ? 'recomendado ' + fEur.format((cr / (obj / 100)) * iva) : '';
     if (p.pvp > 0 && cr > 0) {
       const fc = (cr / (p.pvp / iva)) * 100;
-      pill.className = 'pill ' + (fc <= obj ? 'ok' : fc <= obj + 5 ? 'warn' : 'crit');
-      pill.textContent = 'Food cost ' + fNum(fc) + ' %';
+      pill.className = 'pill' + (p.soloMenu ? '' : ' ' + (fc <= obj ? 'ok' : fc <= obj + 5 ? 'warn' : 'crit'));
+      pill.textContent = 'Food cost ' + fNum(fc) + ' %' + (p.soloMenu ? ' · solo en menú' : '');
     } else {
       pill.className = 'pill';
-      pill.textContent = cr > 0 ? 'Falta el precio de carta' : 'Añade ingredientes';
+      pill.textContent = cr > 0 ? (p.soloMenu ? 'Solo en menú' : 'Falta el precio de carta') : 'Añade ingredientes';
     }
   }
   $('o-total').textContent =
@@ -189,6 +193,12 @@ function inputFicha(e) {
   const t = e.target;
   if (t.dataset.p) {
     const dp = t.dataset.p;
+    if (dp === 'soloMenu') {
+      p.soloMenu = t.checked;
+      guardar('platos', p);
+      calcular();
+      return;
+    }
     if (dp === 'base') {
       p.base = t.checked;
       guardar('platos', p);

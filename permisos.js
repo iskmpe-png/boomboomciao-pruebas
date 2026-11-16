@@ -24,6 +24,10 @@ const COLNIV = {
 };
 const ACT2 = new Set([
   'tf-importar',
+  'conv-ud',
+  'sel-ini',
+  'sel-mover',
+  'sel-aplicar',
   'ei-importar',
   'ei-aplicar',
   'tf-aplicar',

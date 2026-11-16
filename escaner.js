@@ -18,7 +18,7 @@ async function escanear() {
       imgs.length +
       ' imágenes son las páginas de UN albarán o factura de proveedor de un restaurante en España. Extrae los datos y responde SOLO con JSON con esta forma exacta:\n' +
       '{"proveedor":"nombre comercial del proveedor","fecha":"AAAA-MM-DD","albaran":"número de albarán o factura","base_imponible":número sin IVA o null,"total":número con IVA o null,"lineas":[{"descripcion":"texto de la línea tal cual","producto":"nombre EXACTO de la lista de productos si es claramente el mismo producto, si no \\"\\"","cantidad":número,"unidad":"kg"|"l"|"ud","precio":precio por kg, litro o unidad SIN IVA,"importe":importe de la línea sin IVA}]}\n' +
-      'Reglas: números con punto decimal. Si la línea viene en cajas o formatos, convierte a kg, litros o unidades cuando el albarán lo indique; si no, usa "ud". Si un dato no se lee, pon null. No inventes líneas.\n' +
+      'Reglas: números con punto decimal. Si la línea viene en cajas, bandejas, docenas u otros formatos, convierte a kg, litros o unidades sueltas cuando el albarán lo indique, y da el precio por kilo, litro o unidad suelta: «Huevos caja 30 ud 6,00» son 30 "ud" a 0,20; «Rúcula bandeja 125 g 1,50» son 0,125 "kg" a 12,00. Si no se puede saber, usa "ud". Si un dato no se lee, pon null. No inventes líneas.\n' +
       'Proveedores conocidos: ' +
       proveedores().join(', ') +
       '\nProductos conocidos: ' +

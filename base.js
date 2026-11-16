@@ -47,9 +47,10 @@ const SUBS = {
   ],
   carta: [
     ['platos', 'Platos'],
+    ['elaboraciones', 'Elaboraciones'],
     ['sala', 'Sala y alérgenos'],
     ['ingenieria', 'Ingeniería'],
-    ['eventos', 'Eventos'],
+    ['eventos', 'Menús'],
   ],
   precios: [
     ['productos', 'Productos'],
@@ -73,6 +74,7 @@ const SUBS = {
 const sub = { inicio: 'panel', carta: 'platos', precios: 'productos', cocina: 'recetas', almacen: 'inventario' };
 const LEG = {
   'carta/platos': 'carta',
+  'carta/elaboraciones': 'carta',
   'precios/productos': 'precios',
   'cocina/recetas': 'recetas',
   'almacen/inventario': 'inventario',
@@ -88,6 +90,8 @@ const ALIAS = {
 const PER = { diario: 'Diario', quincenal: 'Quincenal', mensual: 'Mensual' };
 const MOTIVOS = ['Caducado', 'Mal estado', 'Error de cocina', 'Devolución de sala', 'Rotura o caída', 'Otro'];
 const G_BASE = 'Elaboraciones de la casa';
+/* En Carta, el apartado Elaboraciones enseña lo que se produce en casa para usarlo en otros escandallos */
+const enElab = () => sub.carta === 'elaboraciones';
 
 const S = {
   platos: [],

@@ -49,6 +49,15 @@ function nuevoInput(e) {
     }
     return true;
   }
+  if (t.dataset.evsolo) {
+    const ev = evento(),
+      p = ev && ev.platos[+t.dataset.evsolo] ? plato(ev.platos[+t.dataset.evsolo].id) : null;
+    if (p) {
+      p.soloMenu = t.checked;
+      guardar('platos', p, true);
+    }
+    return true;
+  }
   if (t.dataset.evn) {
     const ev = evento();
     if (ev && ev.platos[+t.dataset.evn]) {
@@ -268,7 +277,7 @@ function nuevoClick(b, a) {
     return true;
   }
   if (a === 'ev-nuevo') {
-    const ev = nEvento({ id: nuevoId('eventos'), nombre: '', pax: 10, platos: [] });
+    const ev = nEvento({ id: nuevoId('eventos'), nombre: '', pax: 0, platos: [] });
     S.eventos.push(ev);
     evId = ev.id;
     guardar('eventos', ev);

@@ -67,10 +67,10 @@ function informeNuevo() {
     const e = evento();
     if (!e)
       return {
-        titulo: 'Eventos',
-        sub: S.eventos.length + ' eventos',
+        titulo: 'Menús',
+        sub: S.eventos.length + ' menús',
         cols: [
-          { t: 'Evento', w: 3 },
+          { t: 'Menú', w: 3 },
           { t: 'Personas', w: 1, r: 1 },
           { t: 'Coste por persona', w: 1.6, r: 1 },
           { t: 'Precio', w: 1.2, r: 1 },
@@ -92,7 +92,7 @@ function informeNuevo() {
       pie.push(['Precio por persona', E(e.precio)], ['Food cost', PC(c > 0 ? (c / (e.precio / 1.1)) * 100 : null)]);
     }
     return {
-      titulo: e.nombre || 'Evento',
+      titulo: e.nombre || 'Menú',
       sub:
         (e.pax || 0) +
         ' personas · ' +
