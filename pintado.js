@@ -67,29 +67,38 @@ function pintar() {
   pant = LEG[vista + '/' + sub[vista]] || sub[vista];
   if (!listo()) return;
   pintarListas();
-  ({
-    carta: vCarta,
-    precios: vPrecios,
-    recetas: vRecetas,
-    inventario: vInventario,
-    mermas: vMermas,
-    panel: vPanel,
-    sala: vSala,
-    ingenieria: vIng,
-    eventos: vEventos,
-    comparar: vComparar,
-    alertas: vAlertas,
-    produccion: vProduccion,
-    etiquetas: vEtiquetas,
-    appcc: vAppcc,
-    pedidos: vPedidos,
-    compras: vCompras,
-    asistente: vAsistente,
-    proveedores: vProveedores,
-    historial: vHistorial,
-    grupo: vGrupo,
-    manual: vManual,
-  })[pant]();
+  const fn = window[
+    ({
+      carta: 'vCarta',
+      precios: 'vPrecios',
+      recetas: 'vRecetas',
+      inventario: 'vInventario',
+      mermas: 'vMermas',
+      panel: 'vPanel',
+      sala: 'vSala',
+      ingenieria: 'vIng',
+      eventos: 'vEventos',
+      comparar: 'vComparar',
+      alertas: 'vAlertas',
+      produccion: 'vProduccion',
+      etiquetas: 'vEtiquetas',
+      appcc: 'vAppcc',
+      pedidos: 'vPedidos',
+      compras: 'vCompras',
+      asistente: 'vAsistente',
+      proveedores: 'vProveedores',
+      historial: 'vHistorial',
+      grupo: 'vGrupo',
+      manual: 'vManual',
+    })[pant]
+  ];
+  // Si un módulo no llegó a cargar (p. ej. un 503 de GitHub Pages), avisar en vez de romper la app.
+  if (typeof fn !== 'function') {
+    $('vista').innerHTML =
+      '<section class="card estado"><strong>No se pudo cargar esta sección</strong><span>Revisa la conexión y recarga la página.</span></section>';
+    return;
+  }
+  fn();
 }
 function refrescar() {
   const a = document.activeElement,
