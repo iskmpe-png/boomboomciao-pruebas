@@ -7,11 +7,11 @@ let sb = null,
   rid = null,
   esPlat = false,
   miembros = [];
-const ROLES = { dueno: 'Dueño', encargado: 'Encargado', cocina: 'Cocina', consulta: 'Solo consulta' },
+const ROLES = { dueno: 'Dueño', encargado: 'Encargado', cocina: 'Equipo', consulta: 'Solo consulta' },
   ROLNIV = { dueno: 'admin', encargado: 'admin', cocina: 'interact', consulta: 'view' };
 const errTxt = (e) => {
   const m = String((e && e.message) || e || '');
-  if (/invalid login/i.test(m)) return 'Correo o contraseña incorrectos.';
+  if (/invalid login/i.test(m)) return 'Usuario (o correo) o contraseña incorrectos.';
   if (/not confirmed/i.test(m)) return 'Confirma tu correo con el enlace que te enviamos y vuelve a entrar.';
   if (/already (been )?registered/i.test(m)) return 'Ya hay una cuenta con ese correo. Entra con tu contraseña.';
   if (/rate limit/i.test(m)) return 'Demasiados intentos. Espera unos minutos.';

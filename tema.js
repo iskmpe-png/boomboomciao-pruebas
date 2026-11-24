@@ -4,15 +4,11 @@ const temaActual = () => {
   if (t === 'dark' || t === 'light') return t;
   return window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 };
+/* El botón de tema está dentro de Mi cuenta (Menú › Ajustes) */
 const pintarTema = () => {
-  $('btn-tema').textContent = temaActual() === 'dark' ? 'Claro' : 'Oscuro';
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.setAttribute('content', temaActual() === 'dark' ? '#0f1222' : '#26306b');
 };
 const tg = mem('esc2.tema');
 if (tg === 'dark' || tg === 'light') document.documentElement.setAttribute('data-theme', tg);
-$('btn-tema').addEventListener('click', () => {
-  const n = temaActual() === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', n);
-  mem('esc2.tema', n);
-  pintarTema();
-});
 pintarTema();

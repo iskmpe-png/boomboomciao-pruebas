@@ -29,17 +29,20 @@ function pdfDe(cvs) {
   const n = cvs.length,
     kids = [];
   cvs.forEach((cv, i) => {
+    const mm = cv.mm;
     if (!cv.jpg) cv = jpgDe(cv);
     const jpg = cv.jpg;
-    const pg = 3 + i * 3,
+    /* Ancho de A4, salvo las etiquetas, que van al tamaño exacto del rollo */
+    const pw = mm ? ((mm[0] * 72) / 25.4).toFixed(2) : '595.28',
+      pg = 3 + i * 3,
       ct = pg + 1,
       im = pg + 2,
-      ph = ((595.28 * cv.height) / cv.width).toFixed(2),
-      c = enc.encode('q 595.28 0 0 ' + ph + ' 0 0 cm /Im0 Do Q');
+      ph = mm ? ((mm[1] * 72) / 25.4).toFixed(2) : ((595.28 * cv.height) / cv.width).toFixed(2),
+      c = enc.encode('q ' + pw + ' 0 0 ' + ph + ' 0 0 cm /Im0 Do Q');
     kids.push(pg + ' 0 R');
     obj(
       pg,
-      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 ' +
+      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pw + ' ' +
         ph +
         '] /Resources << /XObject << /Im0 ' +
         im +

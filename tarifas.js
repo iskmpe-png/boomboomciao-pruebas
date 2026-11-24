@@ -226,7 +226,7 @@ function aplicarTarifa() {
       p.actualizado = ahora;
       cambios++;
     } else {
-      p = nProd({ id: nuevoId('productos'), nombre: x.nombre.trim(), proveedor: x.proveedor, precio: x.precio, unidad: x.unidad, actualizado: ahora });
+      p = nProd({ area: areaNueva(), id: nuevoId('productos'), nombre: x.nombre.trim(), proveedor: x.proveedor, precio: x.precio, unidad: x.unidad, actualizado: ahora });
       S.productos.push(p);
       nuevos++;
     }

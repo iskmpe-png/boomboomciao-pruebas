@@ -451,3 +451,80 @@
   color: var(--muted);
   font-weight: 400;
 }
+
+/* Grupos de la carta */
+.gruposc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.chipg {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-height: 38px;
+}
+.chipg small {
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 4px;
+}
+.chipg[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.chipg[aria-pressed='true'] small {
+  color: inherit;
+  opacity: 0.8;
+}
+.grupoh {
+  margin: 14px 0 2px;
+  padding-top: 12px;
+  border-top: 2px solid var(--oro);
+  font-family: var(--font-voz);
+  font-weight: 400;
+  font-size: 1.25rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+}
+.rows > .grupoh:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+.grupoh + .row {
+  border-top: 0;
+}
+.grc-lista {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.grc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.grc input {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.grc small {
+  color: var(--muted);
+  font-size: 0.8rem;
+  min-width: 62px;
+}

@@ -27,7 +27,7 @@ function vProveedores() {
     if (p.proveedor) cnt[p.proveedor] = (cnt[p.proveedor] || 0) + 1;
   });
   $('vista').innerHTML =
-    '<div class="bar"><span class="hint grow">Guarda el WhatsApp y el correo de cada proveedor. Se usan en Pedidos para enviarle su parte del pedido.</span></div>' +
+    '<div class="bar"><span class="hint grow">Guarda el WhatsApp y el correo de cada proveedor, y qué días y hasta qué hora acepta pedidos: la app avisará a tiempo cuando haya que pedirle algo.</span></div>' +
     '<form id="form-prov" class="card pv-add" novalidate><div class="field grow"><label for="pv-nuevo">Añadir proveedor</label><input id="pv-nuevo" type="text" autocomplete="off" list="dl-proveedores" placeholder="Nombre"></div><button class="btn" type="submit">Añadir</button></form>' +
     (ns.length
       ? '<section class="card"><div class="pv-lista">' +
@@ -62,7 +62,9 @@ function vProveedores() {
               i +
               '" type="text" autocomplete="off" data-pvf="nota" value="' +
               esc(p.nota || '') +
-              '"></div></div>'
+              '"></div>' +
+              diasProvHTML(p, i) +
+              '</div>'
             );
           })
           .join('') +

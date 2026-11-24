@@ -1,7 +1,7 @@
 /* ---- Sala y alérgenos ---- */
 function listaSala() {
   const f = norm(fil.sala),
-    l = ordenados(S.platos).filter((p) => !p.base && (!f || norm(p.nombre).indexOf(f) >= 0));
+    l = ordenados(S.platos).filter((p) => !p.base && enArea(p) && (!f || norm(p.nombre).indexOf(f) >= 0));
   $('lista-sala').innerHTML = l.length
     ? l
         .slice(0, lim.sala)

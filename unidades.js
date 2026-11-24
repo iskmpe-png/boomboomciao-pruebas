@@ -58,42 +58,48 @@ function cvPintar() {
       ? 'Escribe cuánto trae cada unidad: por ejemplo 400 g, o 1 si la caja es de un kilo.'
       : '';
 }
+/* Cambia la unidad de un producto y ajusta todo lo que lo usa: fichas, recuento abierto y
+   mínimo de stock. r = cvCalculo(...). Devuelve cuántas fichas se ajustaron. */
+function convertirProducto(p, a, r) {
+  const precio = r3(r.precio),
+    pf = p.precio > 0 ? r.precio / p.precio : 1;
+  let fichas = 0;
+  p.historial.forEach((h) => (h.p = r3(h.p * pf)));
+  p.anterior = r3(p.anterior * pf);
+  p.minimo = r3(p.minimo * r.stock);
+  p.precio = precio;
+  p.unidad = a;
+  if (typeof edIni !== 'undefined' && edIni && edIni.id === p.id) edIni.precio = precio; // no es una subida ni una bajada de precio
+  S.platos.forEach((pl) => {
+    let toca = false;
+    pl.ingredientes.forEach((i) => {
+      if (i.productoId !== p.id) return;
+      i.cantidad = r3(i.cantidad * r.cant);
+      i.precio = precio;
+      i.unidad = a;
+      toca = true;
+    });
+    if (toca) {
+      guardar('platos', pl, true);
+      fichas++;
+    }
+  });
+  /* El recuento abierto también cambia de unidad */
+  S.inventarios.forEach((v) => {
+    if (v.cerrado || !(v.cantidades[p.id] > 0)) return;
+    v.cantidades[p.id] = r3(v.cantidades[p.id] * r.stock);
+    guardar('inventarios', v, true);
+  });
+  guardar('productos', p, true);
+  return fichas;
+}
 function aplicarConv() {
   const d = cvDatos();
   if (!d.r) return;
   const precio = r3(d.r.precio);
   if (d.p) {
-    const p = d.p,
-      pf = p.precio > 0 ? d.r.precio / p.precio : 1;
-    let fichas = 0;
-    p.historial.forEach((h) => (h.p = r3(h.p * pf)));
-    p.anterior = r3(p.anterior * pf);
-    p.minimo = r3(p.minimo * d.r.stock);
-    p.precio = precio;
-    p.unidad = d.a;
-    if (edIni && edIni.id === p.id) edIni.precio = precio; // no es una subida ni una bajada de precio
-    S.platos.forEach((pl) => {
-      let toca = false;
-      pl.ingredientes.forEach((i) => {
-        if (i.productoId !== p.id) return;
-        i.cantidad = r3(i.cantidad * d.r.cant);
-        i.precio = precio;
-        i.unidad = d.a;
-        toca = true;
-      });
-      if (toca) {
-        guardar('platos', pl, true);
-        fichas++;
-      }
-    });
-    /* El recuento abierto también cambia de unidad */
-    S.inventarios.forEach((v) => {
-      if (v.cerrado || !(v.cantidades[p.id] > 0)) return;
-      v.cantidades[p.id] = r3(v.cantidades[p.id] * d.r.stock);
-      guardar('inventarios', v, true);
-    });
-    guardar('productos', p, true);
-    toast(p.nombre + ': ahora ' + fEur.format(precio) + UDP[d.a].slice(1) + (fichas ? (fichas === 1 ? '. Ajustada 1 ficha.' : '. Ajustadas ' + fichas + ' fichas.') : '.'));
+    const fichas = convertirProducto(d.p, d.a, d.r);
+    toast(d.p.nombre + ': ahora ' + fEur.format(precio) + UDP[d.a].slice(1) + (fichas ? (fichas === 1 ? '. Ajustada 1 ficha.' : '. Ajustadas ' + fichas + ' fichas.') : '.'));
   } else {
     const pl = plato(conv.platoId),
       i = d.o;

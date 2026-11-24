@@ -11,7 +11,8 @@ function sbDb(r) {
     cola = [],
     vivo = false,
     tCache = null,
-    tRe = null;
+    tRe = null,
+    fullT = 0;
   const T = () => sb.from('docs'),
     mapa = (c) => st[c] || (st[c] = new Map()),
     TODAS = () => COLS.concat(['ajustes']);
@@ -57,7 +58,7 @@ function sbDb(r) {
     tCache = setTimeout(() => {
       const filas = [];
       Object.keys(st).forEach((c) => st[c].forEach((d, id) => filas.push([c, id, d])));
-      idb.set('cache.' + r, { filas: filas, t: Date.now() });
+      idb.set('cache.' + r, { filas: filas, t: Date.now(), ult: ultMs, full: fullT });
     }, 1200);
   };
   const guardaCola = () => {
@@ -118,6 +119,7 @@ function sbDb(r) {
     Object.keys(st).forEach((c) => st[c].clear());
     Object.keys(sello).forEach((k) => delete sello[k]);
     ultMs = Date.now() - 60000;
+    fullT = Date.now();
     aplicar(rows);
     TODAS().forEach(emitir);
     guardaCache();
@@ -132,19 +134,27 @@ function sbDb(r) {
     try {
       if (sinRed || cola.length) await sincronizar();
       else {
-        const q = await T()
-          .select('col,id,data,borrado,updated_at')
-          .eq('restaurante_id', r)
-          .gt('updated_at', new Date(Math.max(0, ultMs - 20000)).toISOString())
-          .order('updated_at')
-          .limit(1000);
-        if (q.error) {
-          if (esRed(q.error)) conexion(false, cola.length);
-        } else {
-          const cs = Object.keys(aplicar(q.data || []));
-          cs.forEach(emitir);
-          if (cs.length) guardaCache();
+        /* Solo lo que ha cambiado desde la última vez (de 1000 en 1000) */
+        const cs = {};
+        for (let vuelta = 0; vuelta < 20; vuelta++) {
+          const q = await T()
+            .select('col,id,data,borrado,updated_at')
+            .eq('restaurante_id', r)
+            .gt('updated_at', new Date(Math.max(0, ultMs - 20000)).toISOString())
+            .order('updated_at')
+            .limit(1000);
+          if (q.error) {
+            if (esRed(q.error)) conexion(false, cola.length);
+            break;
+          }
+          Object.assign(cs, aplicar(q.data || []));
+          if (!q.data || q.data.length < 1000) {
+            conexion(true);
+            break;
+          }
         }
+        Object.keys(cs).forEach(emitir);
+        if (Object.keys(cs).length) guardaCache();
       }
     } catch (e) {
       if (esRed(e)) conexion(false, cola.length);
@@ -255,6 +265,27 @@ function sbDb(r) {
     },
     async start() {
       cola = (await idb.get('cola.' + r)) || [];
+      /* Arranque rápido: se pinta al momento con lo guardado en el móvil y después solo se
+         descarga lo que ha cambiado (las fotos de los platos y todo lo demás ya están aquí).
+         Cada 3 días se hace una descarga completa por si acaso. */
+      const c0 = await idb.get('cache.' + r);
+      if (c0 && c0.filas && c0.ult) {
+        c0.filas.forEach((x) => mapa(x[0]).set(x[1], x[2]));
+        cola.forEach((x) => {
+          if (x[3]) mapa(x[0]).delete(x[1]);
+          else mapa(x[0]).set(x[1], x[2]);
+        });
+        ultMs = c0.ult;
+        fullT = c0.full || 0;
+        TODAS().forEach(emitir);
+        arrancar();
+        pedir();
+        if (Date.now() - fullT > 3 * 864e5)
+          sincronizar().catch((e) => {
+            if (esRed(e)) conexion(false, cola.length);
+          });
+        return;
+      }
       try {
         await sincronizar();
         arrancar();

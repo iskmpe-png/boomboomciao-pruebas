@@ -97,6 +97,7 @@ function vPanel() {
       '.</p>';
   $('vista').innerHTML =
     (ppVisible() ? ppHTML() : '') +
+    tablonGestionHTML() +
     '<div class="bar">' +
     mesHTML() +
     '<span class="grow"></span>' +
@@ -140,9 +141,12 @@ function vPanel() {
     av(nAl, 'Cambios de precio', 'precios-alertas') +
     av(nCo, 'Productos con proveedor más barato', 'precios-comparar') +
     av(nPe, 'Productos por pedir', 'almacen-pedidos') +
+    (puede(2) ? av(pendientesMios().length, 'Cambios de albaranes por aprobar', 'almacen-compras') : '') +
+    av(sinEnlazar().length, 'Productos sin enlazar a un plato', 'precios-productos') +
     '<a class="row" href="#cocina-appcc" style="text-decoration:none"><span class="n"><b>Registros APPCC de hoy</b></span><span class="d"><span class="pill' +
     (nAp ? ' ok' : ' warn') +
     '">' +
     nAp +
     '</span></span></a></div></section></div></div>';
+  pintaGaleria();
 }

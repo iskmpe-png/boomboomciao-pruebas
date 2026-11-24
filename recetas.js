@@ -8,10 +8,10 @@ function textoReceta(p) {
   const l = [(p.nombre || 'Receta').toUpperCase(), 'Rinde: ' + rindeF(p), '', 'INGREDIENTES'];
   p.ingredientes.forEach((i) => {
     if (nom(i))
-      l.push('- ' + nom(i) + ': ' + cantTxt(i) + (conCostes ? ' (' + fEur.format(coste(i) * factor) + ')' : ''));
+      l.push('- ' + nom(i) + ': ' + cantTxt(i) + (conCostes && !sinPrecios ? ' (' + fEur.format(coste(i) * factor) + ')' : ''));
   });
   if (p.elaboracion.trim()) l.push('', 'ELABORACIÓN', p.elaboracion.trim());
-  if (conCostes) {
+  if (conCostes && !sinPrecios) {
     l.push('', (p.base ? 'Coste por ' + UDI[p.unidadBase] : 'Coste por ración') + ': ' + fEur.format(costeUd(p)));
     if (p.pvp > 0 && !p.base) l.push('Precio en carta: ' + fEur.format(p.pvp));
   }
@@ -52,23 +52,28 @@ function vRecetas() {
     esc(show(r3(p.raciones * factor))) +
     '"></div>' +
     '<button class="btn" type="button" data-act="modo-cocina">Modo cocina</button>' +
-    '<a class="btn primary" id="r-wa" target="_blank" rel="noopener">WhatsApp</a><a class="btn" id="r-gm" target="_blank" rel="noopener">Gmail</a><button class="btn" type="button" data-act="copiar-receta">Copiar</button>' +
-    expHTML(1) +
+    expHTML(
+      1,
+      '<a id="r-wa" target="_blank" rel="noopener">Enviar por WhatsApp</a><a id="r-gm" target="_blank" rel="noopener">Enviar por correo</a>' + mOp('copiar-receta', 'Copiar el texto'),
+      'Compartir',
+    ) +
     '</div>' +
-    '<section class="card"><div><h2 style="font-size:1.9rem">' +
+    '<section class="card"><div class="receta-cab">' + fotoCaja(p, true) + '<div><h2 style="font-size:1.9rem">' +
     esc(p.nombre || 'Sin nombre') +
     '</h2><p class="hint" id="r-rinde">Rinde ' +
     rindeF(p) +
-    '</p></div>' +
+    '</p></div></div>' +
     '<div id="r-lista">' +
     listaRecetaHTML(p) +
     '</div>' +
     '<div class="field"><label for="r-elab">Elaboración</label><textarea id="r-elab" rows="7" placeholder="Pasos, tiempos y temperaturas. Puedes dictarlos con el micrófono del teclado.">' +
     esc(p.elaboracion) +
     '</textarea></div>' +
-    '<label class="check" for="r-costes"><input type="checkbox" id="r-costes"' +
-    (conCostes ? ' checked' : '') +
-    '> Incluir costes y precio de carta al compartir</label>' +
+    (sinPrecios
+      ? ''
+      : '<label class="check" for="r-costes"><input type="checkbox" id="r-costes"' +
+        (conCostes ? ' checked' : '') +
+        '> Incluir costes y precio de carta al compartir</label>') +
     '<p class="hint" id="r-msg" aria-live="polite"></p><div class="field" id="r-caja" hidden><label for="r-texto">Texto de la receta</label><textarea id="r-texto" rows="8" readonly></textarea></div></section>';
   enlacesReceta();
 }

@@ -36,17 +36,19 @@ function pintarListas() {
   $('dl-proveedores').innerHTML = proveedores()
     .map((n) => '<option value="' + esc(n) + '"></option>')
     .join('');
-  const gr = {};
-  S.platos.forEach((p) => {
-    if (p.grupo) gr[p.grupo] = 1;
-  });
-  $('dl-grupos').innerHTML = Object.keys(gr)
-    .sort()
+  $('dl-grupos').innerHTML = gruposCarta()
     .map((n) => '<option value="' + esc(n) + '"></option>')
     .join('');
+  if ($('dl-gelab'))
+    $('dl-gelab').innerHTML = gruposElab()
+      .map((n) => '<option value="' + esc(n) + '"></option>')
+      .join('');
 }
 function pintar() {
   pintarMenu();
+  document.body.dataset.sec = vista;
+  if (typeof pintarTabbar === 'function') pintarTabbar();
+  delete $('vista').dataset.area;
   const ss = SUBS[vista],
     sn = $('subs');
   sn.hidden = ss.length < 2;
@@ -65,40 +67,35 @@ function pintar() {
     )
     .join('');
   pant = LEG[vista + '/' + sub[vista]] || sub[vista];
+  if (typeof chatFab === 'function') chatFab();
+  if (typeof pintaRecordatorio === 'function') pintaRecordatorio();
   if (!listo()) return;
   pintarListas();
-  const fn = window[
-    ({
-      carta: 'vCarta',
-      precios: 'vPrecios',
-      recetas: 'vRecetas',
-      inventario: 'vInventario',
-      mermas: 'vMermas',
-      panel: 'vPanel',
-      sala: 'vSala',
-      ingenieria: 'vIng',
-      eventos: 'vEventos',
-      comparar: 'vComparar',
-      alertas: 'vAlertas',
-      produccion: 'vProduccion',
-      etiquetas: 'vEtiquetas',
-      appcc: 'vAppcc',
-      pedidos: 'vPedidos',
-      compras: 'vCompras',
-      asistente: 'vAsistente',
-      proveedores: 'vProveedores',
-      historial: 'vHistorial',
-      grupo: 'vGrupo',
-      manual: 'vManual',
-    })[pant]
-  ];
-  // Si un módulo no llegó a cargar (p. ej. un 503 de GitHub Pages), avisar en vez de romper la app.
-  if (typeof fn !== 'function') {
-    $('vista').innerHTML =
-      '<section class="card estado"><strong>No se pudo cargar esta sección</strong><span>Revisa la conexión y recarga la página.</span></section>';
-    return;
-  }
-  fn();
+  ({
+    carta: vCarta,
+    precios: vPrecios,
+    recetas: vRecetas,
+    inventario: vInventario,
+    mermas: vMermas,
+    panel: () => (puede(2) ? vPanel() : vTablon()),
+    sala: vSala,
+    ingenieria: vIng,
+    eventos: vEventos,
+    comparar: vComparar,
+    alertas: vAlertas,
+    produccion: vProduccion,
+    etiquetas: vEtiquetas,
+    appcc: vAppcc,
+    pedidos: vPedidos,
+    compras: vCompras,
+    asistente: vAsistente,
+    proveedores: vProveedores,
+    historial: vHistorial,
+    grupo: vGrupo,
+    manual: vManual,
+    turnos: vTurnos,
+    consumo: vConsumo,
+  })[pant]();
 }
 function refrescar() {
   const a = document.activeElement,
@@ -112,8 +109,15 @@ function refrescar() {
 }
 const vacio = (t, d, btn) =>
   '<section class="card estado"><strong>' + t + '</strong><span>' + d + '</span>' + (btn || '') + '</section>';
-const expHTML = (varios) =>
-  '<div class="exp"><button class="btn" type="button" data-act="exp-menu" aria-haspopup="true">Exportar</button><div class="exp-m" hidden><button type="button" data-exp="png">Imagen PNG</button><button type="button" data-exp="pdf">PDF</button><button type="button" data-exp="xlsx">Excel</button>' +
+/* Un solo botón desplegable para las acciones secundarias de cada pantalla y para exportar.
+   «extra» son otras opciones (botones con data-act) que van arriba; «etq» es el texto del botón. */
+const mOp = (act, txt, attrs) => '<button type="button" data-act="' + act + '"' + (attrs || '') + '>' + txt + '</button>';
+const expHTML = (varios, extra, etq) =>
+  '<div class="exp"><button class="btn" type="button" data-act="exp-menu" aria-haspopup="true" aria-expanded="false">' +
+  (etq || (extra ? 'Más' : 'Exportar')) +
+  '<svg class="flecha" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div class="exp-m" hidden>' +
+  (extra ? extra + '<span class="exp-sep">Exportar</span>' : '') +
+  '<button type="button" data-exp="png">Imagen PNG</button><button type="button" data-exp="pdf">PDF</button><button type="button" data-exp="xlsx">Excel</button>' +
   (varios ? '<button type="button" data-act="multi">Varios a la vez…</button>' : '') +
   '</div></div>';
 const masHTML = (k, total) =>
@@ -127,6 +131,7 @@ const masHTML = (k, total) =>
 function opcionesPlatos(sel) {
   const g = {};
   ordenados(S.platos).forEach((p) => {
+    if (!enArea(p) && p.id !== sel) return;
     const n = grupoDe(p);
     (g[n] || (g[n] = [])).push(p);
   });

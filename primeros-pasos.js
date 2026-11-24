@@ -7,7 +7,7 @@ function ppPasos() {
     { ok: S.platos.some((p) => !p.base), t: 'Crea las fichas de tus platos', d: 'Cada plato con sus ingredientes y cantidades: la app calcula el coste y el food cost.', h: '#carta-platos', b: 'Ir a Carta' },
     { ok: S.proveedores.some((p) => p.whatsapp || p.email), t: 'Guarda el contacto de los proveedores', d: 'Con su WhatsApp o correo, los pedidos se envían en un toque.', h: '#almacen-proveedores', b: 'Ir a Proveedores' },
     { ok: S.productos.some((p) => p.minimo > 0), t: 'Pon el stock mínimo de lo importante', d: 'Así la app te avisa de lo que hay que pedir.', h: '#precios-productos', b: 'Ir a Precios' },
-    { ok: S.manual.length > 0, t: 'Escribe el manual de la casa', d: 'Lo que el equipo debe saber cuando no estás. El asistente responde con ello.', h: '#inicio-manual', b: 'Ir al Manual' },
+    { ok: S.manual.length > 0, t: 'Escribe el manual de la casa', d: 'Lo que el equipo debe saber cuando no estás. El asistente responde con ello.', h: '#control-manual', b: 'Ir al Manual' },
   ].concat(sb ? [{ ok: miembros.length > 1, t: 'Da acceso a tu equipo', d: 'Cada persona crea su cuenta y tú le das su rol desde Menú › Usuarios.', h: '', b: '' }] : []);
 }
 function ppHTML() {
