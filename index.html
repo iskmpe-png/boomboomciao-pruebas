@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://eu.i.posthog.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <title>Boom Boom Ciao</title>
 <meta name="description" content="Gestión de cocina: escandallos, precios, recetas, inventario y mermas.">
 <meta name="theme-color" content="#2D3661">
@@ -72,6 +72,7 @@
 <div id="multi" hidden role="dialog" aria-modal="true" aria-label="Exportar varios"></div>
 
 <!-- Configuración del entorno y librería de la base de datos -->
+<script src="analitica.js"></script>
 <script src="config.js?v=30"></script>
 <script src="supabase.js"></script>
 <!-- La app, por partes. El orden importa: cada archivo usa lo que definen los anteriores. -->
