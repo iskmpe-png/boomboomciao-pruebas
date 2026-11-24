@@ -37,11 +37,25 @@ V.addEventListener('input', (e) => {
 V.addEventListener('change', (e) => {
   const t = e.target;
   if (nuevoChange(e)) return;
-  if (t.id === 'f-grupo') {
-    grp = t.value;
+  if (t.id === 'f-cprov') {
+    filCompra = t.value;
+    lim.compras = 30;
+    listaCompras();
+    return;
+  }
+  if (t.id === 'f-est') {
+    estProd = t.value;
+    lim.precios = 50;
+    listaProd();
+    return;
+  }
+  if (t.id === 'f-ord') {
+    ordCarta = t.value;
     lim.carta = 20;
     listaCarta();
-  } else if (t.id === 'f-prov') {
+    return;
+  }
+  if (t.id === 'f-prov') {
     prov = t.value;
     lim.precios = 25;
     finEdicion();
@@ -139,18 +153,25 @@ function confirmar(b, txt) {
   b.dataset.ok = '1';
   const o = b.textContent;
   b.textContent = txt;
+  b.classList.add('confirmando');
   setTimeout(() => {
     if (b.isConnected) {
       delete b.dataset.ok;
       b.textContent = o;
+      b.classList.remove('confirmando');
     }
   }, 4000);
   return false;
 }
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('.exp'))
+  /* Se cierra al tocar fuera o al elegir una opción */
+  const dentro = e.target.closest('.exp'),
+    opcion = e.target.closest('.exp-m button, .exp-m a');
+  if (!dentro || opcion)
     document.querySelectorAll('.exp-m').forEach((m) => {
       m.hidden = true;
+      const b = m.previousElementSibling;
+      if (b) b.setAttribute('aria-expanded', 'false');
     });
 });
 V.addEventListener('click', (e) => {
@@ -167,7 +188,11 @@ V.addEventListener('click', (e) => {
   if (permClick(b, a) || nuevoClick2(b, a) || nuevoClick(b, a)) return;
   if (a === 'exp-menu') {
     const m = b.nextElementSibling;
+    document.querySelectorAll('.exp-m').forEach((o) => {
+      if (o !== m) o.hidden = true;
+    });
     m.hidden = !m.hidden;
+    b.setAttribute('aria-expanded', String(!m.hidden));
   } else if (a === 'multi') {
     b.parentNode.hidden = true;
     abrirMulti();
@@ -184,6 +209,7 @@ V.addEventListener('click', (e) => {
       compras: listaCompras,
       hist: vHistorial,
       tarifa: vTarifa,
+      consumo: () => filasConsumo(),
     })[k]();
   } else if (a === 'abrir') abrirPlato(b.dataset.id);
   else if (a === 'volver') {
@@ -198,7 +224,8 @@ V.addEventListener('click', (e) => {
       raciones: 1,
       objetivo: 30,
       iva: 10,
-      grupo: !enElab() && grp && grp !== G_BASE ? grp : '',
+      grupo: !enElab() && grp && grp !== SIN_GRUPO && grp !== MENUS ? grp : '',
+      area: areaNueva(),
       base: enElab(),
       ingredientes: [{}],
     });
@@ -245,6 +272,7 @@ V.addEventListener('click', (e) => {
       });
     }
     borrar('platos', p.id);
+    if (fotoDe(p.id)) borrar('fotos', p.id);
     platoId = null;
     abierta = false;
     vCarta();
@@ -306,6 +334,7 @@ V.addEventListener('click', (e) => {
     }
   } else if (a === 'inv-sub') {
     invSub = b.dataset.v;
+    invSel = '';
     vInventario();
   } else if (a === 'sumar-inv') {
     const r = leerDictado($('inv-dictado').value);
@@ -337,9 +366,15 @@ V.addEventListener('click', (e) => {
     if (r.ok.length) listaMermas();
     msgDictado('me-dictado', r);
   } else if (a === 'cerrar-inv') cerrarInv();
+  else if (a === 'inv-ver') {
+    invSel = b.dataset.id;
+    vInventario();
+    scrollTo(0, 0);
+  } else if (a === 'ven-exp') abrirVentasExp();
   else if (a === 'borrar-inv') {
     if (!confirmar(b, 'Pulsa otra vez')) return;
-    borrar('inventarios', b.closest('.row').dataset.id);
+    borrar('inventarios', b.dataset.id || b.closest('[data-id]').dataset.id);
+    invSel = '';
     vInventario();
   } else if (a === 'borrar-merma') {
     borrar('mermas', b.closest('.row').dataset.id);

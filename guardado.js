@@ -15,6 +15,14 @@ function guardar(col, obj, ya) {
     estado('Tu usuario no puede guardar este cambio.');
     return;
   }
+  if (miArea() !== 'todas' && (col === 'productos' || col === 'platos' || col === 'turnos')) {
+    const a = col === 'turnos' ? (/^barra-/.test(obj.id) ? 'barra' : 'cocina') : areaDe(obj);
+    if (a !== miArea()) {
+      estado('Sin guardar: es de ' + a);
+      toast('Tu usuario es de ' + miArea() + ': no puede cambiar cosas de ' + a + '.');
+      return;
+    }
+  }
   if (col === 'platos' || col === 'productos') sucio();
   if (col !== 'ajustes') anotar(col, obj);
   const key = col + '/' + obj.id,
@@ -76,9 +84,17 @@ function volcar(key) {
     }
   });
 }
+/* Borrar: el encargado y el dueño, todo. El resto, solo lo que subió él mismo (y en etiquetas,
+   las listas y formatos compartidos de su cocina). La base de datos aplica la misma regla. */
+const BORRA_EQUIPO = new Set(['etiquetas']);
+function puedeBorrar(col, id) {
+  if (puede(2) || deshaciendo) return true;
+  const x = (S[col] || []).find((d) => d.id === id);
+  return puede(COLNIV[col] == null ? 2 : COLNIV[col]) && (BORRA_EQUIPO.has(col) || esMio(x));
+}
 function borrar(col, id) {
-  if (!puede(2) && !deshaciendo) {
-    toast('Solo el encargado puede eliminar.');
+  if (!puedeBorrar(col, id)) {
+    toast('Solo puedes eliminar lo que subiste tú. Lo demás lo elimina el encargado.');
     return;
   }
   anotarBaja(col, id);

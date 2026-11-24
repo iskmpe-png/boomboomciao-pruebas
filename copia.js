@@ -22,13 +22,7 @@ $('f-copia').addEventListener('change', (e) => {
       const j = JSON.parse(t),
         d = j && j.datos ? j.datos : j;
       if (!d || !Array.isArray(d.platos) || !Array.isArray(d.productos)) throw 0;
-      const aj = d.ajustes
-        ? {
-            id: 'empresa',
-            nombre: String(d.ajustes.nombre || ''),
-            periodo: PER[d.ajustes.periodo] ? d.ajustes.periodo : 'mensual',
-          }
-        : null;
+      const aj = d.ajustes ? nAjustes(d.ajustes) : null;
       if (!esLocal) {
         const filas = [];
         COLS.forEach((c) =>
@@ -36,7 +30,7 @@ $('f-copia').addEventListener('change', (e) => {
             if (x && x.id) filas.push([c, String(x.id), limpio(NORM[c](x))]);
           }),
         );
-        if (aj) filas.push(['ajustes', 'empresa', { nombre: aj.nombre, periodo: aj.periodo }]);
+        if (aj) filas.push(['ajustes', 'empresa', { nombre: aj.nombre, periodo: aj.periodo, grupos: aj.grupos, diasAlbaranes: aj.diasAlbaranes, archivados: aj.archivados }]);
         menu(false);
         toast('Subiendo la copia…');
         return db.lote(filas).then(

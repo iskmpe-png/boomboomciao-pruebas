@@ -71,6 +71,7 @@ function infReceta(p, f) {
   };
 }
 function informe() {
+  if (pant === 'consumo') return informeConsumo();
   const nu = informeNuevo();
   if (nu !== undefined) return nu;
   if (pant === 'carta' && abierta) return infFicha(plato());
@@ -124,8 +125,11 @@ function informe() {
   }
   if (pant === 'inventario') {
     if (invSub === 'hist') {
-      const c = cerradosInv();
-      return {
+      const c = cerradosInv(),
+        sel = invSel && c.find((x) => x.id === invSel);
+      if (sel) return infInventario(sel);
+      /* Sin ninguno abierto: el resumen y cada inventario en su hoja */
+      return [{
         titulo: 'Historial de inventarios',
         sub: c.length + ' conteos',
         cols: [
@@ -136,7 +140,7 @@ function informe() {
         ],
         filas: c.map((x) => [T(fFecha(x.fecha)), T(PER[x.periodo]), N(x.lineas.length, 0), E(x.total)]),
         pie: [],
-      };
+      }].concat(c.slice(0, 24).map(infInventario));
     }
     const v = abierto(false),
       l = v ? ordenados(S.productos).filter((p) => v.cantidades[p.id] > 0) : [];
@@ -161,29 +165,5 @@ function informe() {
       pie: [['Valor del stock', E(tot)]],
     };
   }
-  const l = mermasMes(),
-    tot = l.reduce((t, m) => t + valM(m), 0);
-  return {
-    titulo: 'Mermas',
-    sub: fMes(mesM) + ' · ' + l.length + ' apuntes',
-    cols: [
-      { t: 'Fecha', w: 1.4 },
-      { t: 'Producto', w: 3 },
-      { t: 'Motivo', w: 1.9 },
-      { t: 'Cantidad', w: 1.1, r: 1 },
-      { t: 'Ud.', w: 0.6 },
-      { t: 'Precio', w: 1.1, r: 1 },
-      { t: 'Valor', w: 1.2, r: 1 },
-    ],
-    filas: l.map((m) => [
-      T(fFecha(m.fecha)),
-      T(m.nombre),
-      T(m.motivo),
-      N(m.cantidad),
-      T(UDI[m.unidad]),
-      E(m.precio),
-      E(valM(m)),
-    ]),
-    pie: [['Total de mermas', E(tot)]],
-  };
+  return infMermas();
 }

@@ -61,15 +61,22 @@ const famSingular = (w) => {
   }
   return w;
 };
+/* Presentación y conservación: con esto dos productos con el mismo nombre ya no son comparables
+   (boletus seco ≠ boletus congelado, atún en lata ≠ atún en lomo) */
+const FAM_PRESENTA = { seco: 'seco', seca: 'seco', secos: 'seco', secas: 'seco', deshidratado: 'seco', deshidratada: 'seco', congelado: 'congelado', congelada: 'congelado', congelados: 'congelado', congeladas: 'congelado', ultracongelado: 'congelado', fresco: 'fresco', fresca: 'fresco', frescos: 'fresco', frescas: 'fresco', lata: 'lata', latas: 'lata', conserva: 'lata', bolsa: 'bolsa', bolsas: 'bolsa', lomo: 'lomo', lomos: 'lomo', ahumado: 'ahumado', ahumada: 'ahumado', rallado: 'rallado', rallada: 'rallado', loncheado: 'loncheado', loncheada: 'loncheado', lonchas: 'loncheado', polvo: 'polvo', entero: 'entero', entera: 'entero', triturado: 'triturado', triturada: 'triturado', pelado: 'pelado', pelada: 'pelado', liquido: 'liquido', liquida: 'liquido', precocinado: 'precocinado', precocinada: 'precocinado', cocido: 'cocido', cocida: 'cocido', crudo: 'crudo', cruda: 'crudo', ecologico: 'eco', ecologica: 'eco', bio: 'eco' };
+/* Sin la IA: las dos primeras palabras con significado y la presentación.
+   Mejor no comparar dos cosas iguales escritas distinto que comparar dos cosas distintas. */
 const famAuto = (nombre) => {
-  const ws = norm(String(nombre).replace(/\(.*?\)/g, ''))
-    .split(' ')
-    .filter((w) => w && !FAM_VACIAS.has(w) && !/^\d/.test(w))
-    .map(famSingular);
+  const todas = norm(String(nombre).replace(/\(.*?\)/g, '')).split(' ').filter(Boolean),
+    pres = [...new Set(todas.map((w) => FAM_PRESENTA[w]).filter(Boolean))].sort(),
+    ws = todas.filter((w) => !FAM_VACIAS.has(w) && !FAM_PRESENTA[w] && !/^\d/.test(w)).map(famSingular);
   if (!ws.length) return norm(nombre);
-  return FAM_GENERICAS.has(ws[0]) && ws[1] ? ws[0] + ' ' + ws[1] : ws[0];
+  return ws.slice(0, 2).concat(pres).join(' ');
 };
-const famDe = (p) => (p.familia.trim() ? norm(p.familia) : famAuto(p.nombre));
+/* El grupo para comparar: el que puso alguien a mano, el que asignó la IA (si el nombre no ha
+   cambiado desde entonces) o, si no, el automático */
+const claveIA = (p) => (p.clave && p.claveDe === norm(p.nombre) ? norm(p.clave) : '');
+const famDe = (p) => (p.familia.trim() ? norm(p.familia) : claveIA(p) || famAuto(p.nombre));
 const alternativas = (p) =>
   (idx().fam.get(famDe(p)) || [])
     .filter((o) => o.id !== p.id && o.unidad === p.unidad && o.precio > 0)

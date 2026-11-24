@@ -8,6 +8,7 @@ function nuevoInput2(e) {
         const n = q($('vista'), '.sc-l[data-k="' + k + '"] [data-out="n"]');
         if (n) n.innerHTML = notaLinea(l);
       });
+    if (t.dataset.scg === 'proveedor' || t.dataset.scg === 'fecha') pintaScExtra();
     return true;
   }
   if (t.dataset.sl && escaneo) {
@@ -19,10 +20,17 @@ function nuevoInput2(e) {
       l.nombre = t.value;
       const p = prodPorNombre(t.value);
       l.pid = p ? p.id : '';
-      l.act = !!(p && puede(2) && p.unidad === l.unidad && l.precio > 0 && Math.abs(p.precio - l.precio) >= 0.005);
-    } else if (c === 'unidad') l.unidad = uni(t.value);
-    else l[c] = parse(t.value);
+      l.pasar = !!(p && puedeArea(p) && p.unidad === 'ud' && l.conv && l.unidad !== 'ud');
+      l.act = !!(p && puedeArea(p) && (p.unidad === l.unidad || l.pasar) && l.precio > 0 && Math.abs(p.precio - l.precio) >= 0.005);
+    } else {
+      if (c === 'unidad') l.unidad = uni(t.value);
+      else l[c] = parse(t.value);
+      /* Corregido a mano: la cuenta de la IA ya no vale */
+      delete l.conv;
+      l.pasar = false;
+    }
     q(f, '[data-out="n"]').innerHTML = notaLinea(l);
+    pintaScExtra();
     return true;
   }
   if (t.dataset.sc && escaneo) {
@@ -35,16 +43,37 @@ function nuevoInput2(e) {
     return true;
   }
   if (t.dataset.vil && ventasImp) {
-    const l = ventasImp.lineas[+t.closest('[data-k]').dataset.k];
+    const l = ventasImp.lineas[+t.closest('[data-k]').dataset.k],
+      c = t.dataset.vil;
     if (l) {
-      if (t.dataset.vil === 'n') l.n = Math.round(parse(t.value));
-      else l.pid = t.value;
-      $('vi-n').textContent =
-        suma(
-          ventasImp.lineas.filter((x) => x.pid),
-          (x) => x.n,
-        ) + ' platos vendidos';
+      if (c === 'n') l.n = Math.round(parse(t.value));
+      else if (c === 'precio') l.precio = Math.round(parse(t.value) * 100) / 100;
+      else if (c === 'alias') l.alias = t.checked;
+      else if (c === 'renombrar') l.renombrar = t.checked;
+      else if (c === 'tiempo') l.tiempo = t.value.trim().slice(0, 40);
+      else if (c === 'pid') {
+        l.pid = t.value;
+        /* Elegido a mano: deja de ser una sugerencia y se recuerda el nombre del TPV */
+        if (l.como === 'parecido' || !l.como) l.como = l.pid && l.pid !== '__nuevo' ? 'manual' : l.como;
+        const y = scrollY;
+        vIng();
+        scrollTo(0, y);
+        return true;
+      }
+      if ($('vi-n')) $('vi-n').textContent = textoSumar();
+      const mb = t.closest('[data-mi]'),
+        m = mb && ventasImp.menus[+mb.dataset.mi],
+        o = mb && q(mb, '[data-out="tm"]');
+      if (m && o) o.textContent = totalMenu(m) + (totalMenu(m) === 1 ? ' menú' : ' menús');
     }
+    return true;
+  }
+  if (t.dataset.vim && ventasImp) {
+    const m = ventasImp.menus[+t.closest('[data-mi]').dataset.mi];
+    if (m) m.ev = t.value;
+    const y = scrollY;
+    vIng();
+    scrollTo(0, y);
     return true;
   }
   return false;
@@ -99,7 +128,14 @@ function nuevoClick2(b, a) {
     return true;
   }
   if (a === 'ventas-importar') {
-    importarVentas();
+    elegirPeriodoVentas();
+    return true;
+  }
+  if (a === 'vi-crear-todos' && ventasImp) {
+    ventasImp.lineas.forEach((l) => {
+      if (!l.pid) l.pid = '__nuevo';
+    });
+    vIng();
     return true;
   }
   if (a === 'vi-cancelar') {

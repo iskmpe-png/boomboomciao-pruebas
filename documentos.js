@@ -23,14 +23,32 @@ const tipoDoc = (f) => {
 /* Devuelve { textos: [texto…], imagenes: [Blob…] } con lo que hay dentro del archivo */
 async function leerDocumento(f) {
   const tipo = tipoDoc(f);
-  if (tipo === 'imagen') return { textos: [], imagenes: [await reducir(f, 1800)] };
+  if (tipo === 'imagen') {
+    try {
+      return { textos: [], imagenes: [await reducir(f, 2200)] };
+    } catch (e) {
+      throw new Error(
+        /heic|heif/i.test(f.type + f.name)
+          ? '«' + f.name + '» es una foto HEIC del iPhone y no se puede abrir aquí. En el iPhone: Ajustes › Cámara › Formatos › «Más compatible», o haz una captura de pantalla de la foto.'
+          : 'No se pudo abrir la imagen «' + f.name + '».',
+      );
+    }
+  }
   if (tipo === 'texto') return { textos: [await f.text()], imagenes: [] };
   if (tipo === 'excel') {
     await libExcel();
     const wb = window.XLSX.read(await f.arrayBuffer(), { type: 'array' });
     return {
+      /* Se quitan las columnas vacías del final de cada fila, que solo hacen bulto */
       textos: wb.SheetNames.map(
-        (n) => 'HOJA: ' + n + '\n' + window.XLSX.utils.sheet_to_csv(wb.Sheets[n], { FS: ';', blankrows: false }),
+        (n) =>
+          'HOJA: ' + n + '\n' +
+          window.XLSX.utils
+            .sheet_to_csv(wb.Sheets[n], { FS: ';', blankrows: false })
+            .split('\n')
+            .map((l) => l.replace(/;+\s*$/, ''))
+            .filter((l) => l.replace(/[;\s]/g, ''))
+            .join('\n'),
       ).filter((t) => t.length > 12),
       imagenes: [],
     };
@@ -64,12 +82,12 @@ async function leerDocumento(f) {
       else if (imagenes.length < 24) {
         /* Página escaneada: no tiene texto, se manda como foto */
         const vp = pg.getViewport({ scale: 1 }),
-          v = pg.getViewport({ scale: Math.min(2.2, 1700 / Math.max(vp.width, vp.height)) }),
+          v = pg.getViewport({ scale: Math.min(3, 2200 / Math.max(vp.width, vp.height)) }),
           cv = document.createElement('canvas');
         cv.width = Math.round(v.width);
         cv.height = Math.round(v.height);
         await pg.render({ canvasContext: cv.getContext('2d'), viewport: v }).promise;
-        imagenes.push(await new Promise((ok) => cv.toBlob(ok, 'image/jpeg', 0.85)));
+        imagenes.push(await new Promise((ok) => cv.toBlob(ok, 'image/jpeg', 0.88)));
         cv.width = cv.height = 0;
       }
     }

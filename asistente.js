@@ -183,7 +183,10 @@ const instr = () =>
   PENDIENTE +
   ' para que el encargado la añada al manual.\n' +
   'Sé breve y sin relleno. Formato: texto sencillo, negrita con **así** y listas con guiones; sin títulos, tablas ni bloques de código.\n' +
-  'No puedes cambiar datos de la app: explica dónde hacerlo. Apartados: Inicio (Panel, Asistente, Manual); Carta (Platos, Sala y alérgenos, Ingeniería, Eventos); Precios (Productos, Comparar, Alertas); Cocina (Recetas, Producción, Etiquetas, APPCC); Almacén (Inventario, Pedidos, Compras, Proveedores, Mermas).';
+  'No puedes cambiar datos de la app: explica dónde hacerlo. Apartados: Inicio (Panel, Manual, Historial); Carta (Platos, Elaboraciones, Sala y alérgenos, Ingeniería, Menús); el asistente es el chat del botón redondo de abajo a la derecha. Arriba se elige la zona: Cocina o Barra; Precios (Productos, Comparar, Alertas); Cocina (Recetas, Producción, Etiquetas, APPCC); Almacén (Inventario, Pedidos, Compras, Proveedores, Mermas).' +
+  (sinPrecios
+    ? '\nIMPORTANTE: hablas con alguien del equipo (cocina o barra), no con un encargado. No le des precios, costes, food cost, márgenes ni importes de compras: si los pide, dile que eso lo ven el dueño y los encargados. Sus apartados son: Inicio (Tablón, Turnos y avisos, Manual), Cocina (Recetas, Producción, Etiquetas, APPCC) y Almacén (Inventario, Compras, Mermas).'
+    : '');
 function fmt(t) {
   return esc(t)
     .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
@@ -216,19 +219,33 @@ function pintarChat() {
   o.scrollTop = o.scrollHeight;
 }
 function vAsistente() {
-  if (!sAPI) {
-    $('vista').innerHTML = sinIA();
-    return;
+  abrirChat();
+  location.replace('#inicio-panel');
+}
+/* Respuestas guardadas: la misma pregunta con los mismos datos de la app no se vuelve a pagar.
+   Duran 6 horas y se guardan las 30 últimas en este dispositivo. */
+const hashTxt = (t) => {
+  let h = 5381;
+  for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36) + ':' + t.length;
+};
+function cacheIA(k, v) {
+  let c = {};
+  try {
+    c = JSON.parse(mem('bbc.iaCache') || '{}') || {};
+  } catch (e) {}
+  const ahora = Date.now();
+  if (v === undefined) {
+    const x = c[k];
+    return x && ahora - x.t < 6 * 3600e3 ? x.a : null;
   }
-  $('vista').innerHTML =
-    '<section class="card chat"><div class="acciones" style="justify-content:space-between"><h2>Asistente</h2><button class="link" type="button" data-act="as-nuevo">Nueva conversación</button></div>' +
-    '<div id="as-msgs" class="msgs" aria-live="polite"></div><form id="form-as" class="as-form" novalidate><textarea id="as-input" rows="2" aria-label="Pregunta para el asistente" placeholder="Escribe o dicta tu pregunta"></textarea>' +
-    '<button class="btn primary" type="submit" id="as-env">' +
-    (asCtl ? 'Detener' : 'Enviar') +
-    '</button></form><p class="hint">' +
-    (sb ? '' : 'Usa tu cuenta de Claude. ') +
-    'Lee los datos de la app y el manual de la casa, pero no cambia nada. Si no sabe una norma del restaurante, apunta la pregunta para el encargado.</p></section>';
-  pintarChat();
+  c[k] = { t: ahora, a: v };
+  const ks = Object.keys(c).sort((a, z) => c[z].t - c[a].t).slice(0, 30),
+    n = {};
+  ks.forEach((x) => (n[x] = c[x]));
+  try {
+    mem('bbc.iaCache', JSON.stringify(n));
+  } catch (e) {}
 }
 function preguntar(q) {
   q = q.trim();
@@ -239,13 +256,23 @@ function preguntar(q) {
   pintarChat();
   let turnos = chat
     .slice(0, -1)
-    .filter((m) => m.content)
-    .slice(-10);
+    .filter((m) => m.content && !m.error)
+    .slice(-6);
   while (turnos.length && turnos[0].role !== 'user') turnos.shift();
+  /* Lo fijo (instrucciones y datos) va siempre delante: así Google reaprovecha la parte repetida
+     de la consulta (caché de prompts) y cuesta menos. Las respuestas viejas largas se recortan. */
   turnos = turnos.map((m, k) => ({
     role: m.role,
-    content: k === 0 ? instr() + '\n\n' + contexto() + '\n\nPREGUNTA: ' + m.content : m.content,
+    content: k === 0 ? instr() + '\n\n' + contexto() + '\n\nPREGUNTA: ' + m.content : m.role === 'assistant' && m.content.length > 1500 ? m.content.slice(0, 1500) + '…' : m.content,
   }));
+  const clave = turnos.length === 1 ? hashTxt(turnos[0].content) : '',
+    guardada = clave ? cacheIA(clave) : null;
+  if (guardada) {
+    r.content = guardada;
+    r.cache = true;
+    pintarChat();
+    return;
+  }
   asCtl = new AbortController();
   const env = $('as-env');
   if (env) env.textContent = 'Detener';
@@ -272,6 +299,7 @@ function preguntar(q) {
     .then(
       (x) => {
         r.content = x.text;
+        if (clave && x.text && x.text.length > 20) cacheIA(clave, x.text);
         apuntarDuda(q, r);
       },
       (e) => {
@@ -286,7 +314,7 @@ function preguntar(q) {
     .then(() => {
       asCtl = null;
       if (!r.content && !r.error) r.error = 'Sin respuesta.';
-      if (pant === 'asistente') {
+      if ($('as-msgs')) {
         pintarChat();
         const b = $('as-env');
         if (b) b.textContent = 'Enviar';

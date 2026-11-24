@@ -1,6 +1,10 @@
 const $ = (id) => document.getElementById(id);
 const q = (el, s) => el.querySelector(s);
-const fEur = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
+const fEurN = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
+/* El equipo (cocineros, bartenders) no ve precios ni costes, salvo en Compras para cuadrar las facturas */
+let sinPrecios = false;
+const fEur = { format: (v) => (sinPrecios && pant !== 'compras' ? '' : fEurN.format(v)) };
+const verPrecios = () => !sinPrecios || pant === 'compras';
 const fNum = (v, d) => new Intl.NumberFormat('es-ES', { maximumFractionDigits: d == null ? 1 : d }).format(v);
 const parse = (s) => {
   const n = parseFloat(String(s).replace(/\s/g, '').replace(',', '.'));
@@ -42,14 +46,11 @@ const UD = { kg: 'g', l: 'ml', ud: 'ud' },
 const SUBS = {
   inicio: [
     ['panel', 'Panel'],
-    ['asistente', 'Asistente'],
-    ['manual', 'Manual'],
+    ['turnos', 'Turnos y avisos'],
   ],
   carta: [
     ['platos', 'Platos'],
     ['elaboraciones', 'Elaboraciones'],
-    ['sala', 'Sala y alérgenos'],
-    ['ingenieria', 'Ingeniería'],
     ['eventos', 'Menús'],
   ],
   precios: [
@@ -63,6 +64,11 @@ const SUBS = {
     ['etiquetas', 'Etiquetas'],
     ['appcc', 'APPCC'],
   ],
+  control: [
+    ['consumo', 'Consumo y stock'],
+    ['ingenieria', 'Ingeniería de menú'],
+    ['manual', 'Manual del asistente'],
+  ],
   almacen: [
     ['inventario', 'Inventario'],
     ['pedidos', 'Pedidos'],
@@ -71,7 +77,7 @@ const SUBS = {
     ['mermas', 'Mermas'],
   ],
 };
-const sub = { inicio: 'panel', carta: 'platos', precios: 'productos', cocina: 'recetas', almacen: 'inventario' };
+const sub = { inicio: 'panel', carta: 'platos', precios: 'productos', cocina: 'recetas', control: 'consumo', almacen: 'inventario' };
 const LEG = {
   'carta/platos': 'carta',
   'carta/elaboraciones': 'carta',
@@ -86,9 +92,13 @@ const ALIAS = {
   recetas: 'cocina-recetas',
   inventario: 'almacen-inventario',
   mermas: 'almacen-mermas',
+  /* Direcciones antiguas (3.0: Ingeniería y el Manual pasan a Control; Sala y alérgenos se quita) */
+  'carta-ingenieria': 'control-ingenieria',
+  'inicio-manual': 'control-manual',
+  'carta-sala': 'carta-platos',
 };
 const PER = { diario: 'Diario', quincenal: 'Quincenal', mensual: 'Mensual' };
-const MOTIVOS = ['Caducado', 'Mal estado', 'Error de cocina', 'Devolución de sala', 'Rotura o caída', 'Otro'];
+const MOTIVOS = ['Caducado', 'Mal estado', 'Quemado', 'Error de cocina', 'Devolución de sala', 'Rotura o caída', 'Otro'];
 const G_BASE = 'Elaboraciones de la casa';
 /* En Carta, el apartado Elaboraciones enseña lo que se produce en casa para usarlo en otros escandallos */
 const enElab = () => sub.carta === 'elaboraciones';
@@ -106,7 +116,13 @@ const S = {
   proveedores: [],
   manual: [],
   dudas: [],
-  ajustes: { id: 'empresa', nombre: 'Boom Boom Ciao', periodo: 'mensual' },
+  fotos: [],
+  turnos: [],
+  pedidos: [],
+  anuncios: [],
+  etiquetas: [],
+  tareas: [],
+  ajustes: { id: 'empresa', nombre: 'Boom Boom Ciao', periodo: 'mensual', grupos: [], gruposElab: [], diasAlbaranes: 30, archivados: [], horasFotos: 24, avisos: [] },
 };
 const COLS = [
   'platos',
@@ -121,6 +137,12 @@ const COLS = [
   'proveedores',
   'manual',
   'dudas',
+  'fotos',
+  'turnos',
+  'pedidos',
+  'anuncios',
+  'etiquetas',
+  'tareas',
 ];
 const cargado = {};
 let vista = 'inicio',
@@ -133,11 +155,13 @@ let vista = 'inicio',
   conCostes = false;
 const fil = { carta: '', precios: '', inv: '', sala: '' },
   lim = { carta: 20, precios: 25, inv: 20, mermas: 25, sala: 20, appcc: 25, compras: 25, hist: 30, tarifa: 40 };
+let ordCarta = ''; // '', 'fc' o 'coste'
 let grp = '',
   prov = '',
   editProd = null,
   addProd = false,
   invSub = 'conteo',
+  invSel = '', // inventario cerrado que se está viendo en el historial
   mesM = hoy().slice(0, 7);
 const pend = {};
 
@@ -158,6 +182,11 @@ function mem(k, v) {
   } catch (e) {}
   return null;
 }
+/* Zona de trabajo de este dispositivo: 'cocina', 'barra' o '' (todo). La recuerda cada persona. */
+let area = mem('bbc.area');
+if (area !== 'barra' && area !== '') area = 'cocina';
+const enArea = (x) => !area || (area === 'barra' ? x.area === 'barra' : x.area !== 'barra');
+const areaNueva = () => (area === 'barra' ? 'barra' : '');
 let tt;
 function toast(t) {
   const el = $('toast');

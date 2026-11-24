@@ -21,5 +21,6 @@ function idx() {
 }
 function sucio() {
   ix = null;
+  enlCache = null;
   dlSucio = true;
 }

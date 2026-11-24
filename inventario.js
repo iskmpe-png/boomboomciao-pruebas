@@ -79,6 +79,10 @@ function vInventario() {
     '">Conteo</button><button type="button" data-act="inv-sub" data-v="hist" aria-pressed="' +
     (invSub === 'hist') +
     '">Historial</button></div>';
+  if (invSub === 'hist' && invSel && cer.some((c) => c.id === invSel)) {
+    vInvDetalle(cer.find((c) => c.id === invSel), seg);
+    return;
+  }
   if (invSub === 'hist') {
     $('vista').innerHTML =
       '<div class="bar">' +
@@ -90,18 +94,15 @@ function vInventario() {
         ? cer
             .map(
               (c) =>
-                '<div class="row" data-id="' +
+                '<button class="row" type="button" data-act="inv-ver" data-id="' +
                 esc(c.id) +
-                '"><div class="n"><b>' +
+                '"><span class="n"><b>' +
                 esc(fFecha(c.fecha)) +
                 '</b><span>' +
-                esc(PER[c.periodo]) +
-                ' · ' +
-                c.lineas.length +
-                (c.lineas.length === 1 ? ' producto' : ' productos') +
-                '</span></div><div class="d"><b>' +
+                esc(PER[c.periodo] + ' · ' + c.lineas.length + (c.lineas.length === 1 ? ' producto' : ' productos') + (nombre(c.por) ? ' · ' + nombre(c.por) : '')) +
+                '</span></span><span class="d"><b>' +
                 fEur.format(c.total) +
-                '</b><button class="link" type="button" data-act="borrar-inv" style="color:var(--crit)">Eliminar</button></div></div>',
+                '</b><span class="hint">Ver ›</span></span></button>',
             )
             .join('')
         : '<p class="hint">Aquí verás los conteos cerrados, con su fecha y el valor del stock.</p>') +
@@ -134,6 +135,30 @@ function vInventario() {
     '<div class="rows" id="lista-inv"></div></section>';
   listaInv();
   calcInv();
+}
+/* Un inventario guardado, producto a producto y agrupado por proveedor */
+function vInvDetalle(c, seg) {
+  const g = {};
+  c.lineas.forEach((l) => (g[l.proveedor || 'Sin proveedor'] = g[l.proveedor || 'Sin proveedor'] || []).push(l));
+  const ks = Object.keys(g).sort((a, z) => a.localeCompare(z, 'es')),
+    i = cerradosInv().findIndex((x) => x.id === c.id),
+    ant = cerradosInv()[i + 1];
+  $('vista').innerHTML =
+    '<div class="bar">' + seg + '<button class="btn" type="button" data-act="inv-ver" data-id="">← Historial</button><span class="grow"></span>' + expHTML() + '</div>' +
+    '<section class="card"><h2>Inventario del ' + esc(fFecha(c.fecha)) + '</h2><p class="hint">' + esc(PER[c.periodo]) + ' · ' + c.lineas.length + ' productos' + (nombre(c.por) ? ' · cerró ' + esc(nombre(c.por)) : '') + '</p>' +
+    '<div class="kpis"><div class="kpi"><span class="lbl">Valor del stock</span><b>' + fEur.format(c.total) + '</b></div>' +
+    (ant ? '<div class="kpi"><span class="lbl">Frente al ' + esc(fFecha(ant.fecha)) + '</span><b>' + (c.total >= ant.total ? '+' : '') + fEur.format(c.total - ant.total) + '</b></div>' : '') + '</div></section>' +
+    ks
+      .map((k) => {
+        const l = g[k].slice().sort((a, z) => a.nombre.localeCompare(z.nombre, 'es'));
+        return (
+          '<section class="card"><h3>' + esc(k) + ' <small class="hint">' + fEur.format(suma(l, (x) => x.cantidad * x.precio)) + '</small></h3><div class="tabla"><table class="nivel"><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Valor</th></tr></thead><tbody>' +
+          l.map((x) => '<tr><td>' + esc(x.nombre) + '</td><td>' + fNum(x.cantidad, 3) + ' ' + UDI[uni(x.unidad)] + '</td><td>' + fEur.format(x.precio) + '</td><td>' + fEur.format(x.cantidad * x.precio) + '</td></tr>').join('') +
+          '</tbody></table></div></section>'
+        );
+      })
+      .join('') +
+    (puede(2) ? '<div class="acciones"><button class="btn small peligro" type="button" data-act="borrar-inv" data-id="' + esc(c.id) + '">Eliminar este inventario</button></div>' : '');
 }
 function inputInventario(e) {
   const t = e.target,

@@ -13,7 +13,7 @@ const CLASEP = {
 };
 function clasesIng() {
   const v = ventasMes(false),
-    d = ordenados(S.platos.filter((p) => !p.base && p.pvp > 0)).map((p) => ({
+    d = ordenados(S.platos.filter((p) => !p.base && p.pvp > 0 && enArea(p))).map((p) => ({
       p: p,
       n: v ? Number(v.unidades[p.id]) || 0 : 0,
       m: margenUd(p),
@@ -63,10 +63,12 @@ function vIng() {
   $('vista').innerHTML =
     '<div class="bar">' +
     mesHTML() +
-    '<span class="hint grow">Importa el informe del TPV o escribe a mano cuántos platos se vendieron en el mes.</span>' +
+    '<span class="hint grow">Importa el informe del TPV eligiendo sus fechas (un día, una semana o un mes), o escribe a mano cuántos platos se vendieron en el mes.</span>' +
     (sAPI ? '<button class="btn primary" type="button" data-act="ventas-importar">Importar ventas</button>' : '') +
-    expHTML() +
+    expHTML(0, mOp('ven-exp', 'Ventas de un día, semana o mes…')) +
     '</div><div class="kpis" id="ing-k"></div>' +
+    importadasHTML() +
+    menusVendidosHTML() +
     '<section class="card"><div class="rows" id="lista-ing">' +
     (r.d.length
       ? r.d

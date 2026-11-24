@@ -21,10 +21,13 @@ function explotar(p, f, acc, d) {
 }
 const evento = () => S.eventos.filter((e) => e.id === evId)[0] || null;
 function compraEv(e) {
-  const acc = {};
+  const acc = {},
+    t = e.opciones ? tiemposMenu(e) : null;
   e.platos.forEach((x) => {
-    const p = idx().pl.get(x.id);
-    if (p) explotar(p, x.n * (e.pax || 0), acc, 0);
+    const p = idx().pl.get(x.id),
+      /* Con opciones, los comensales se reparten a partes iguales entre las opciones de cada tiempo */
+      rep = t ? t[tmpo(x) || T_SOLO + x.id].length : 1;
+    if (p) explotar(p, (x.n * (e.pax || 0)) / rep, acc, 0);
   });
   return Object.keys(acc)
     .map((k) => acc[k])
@@ -51,12 +54,14 @@ function calcEv() {
         ' %</span>'
       : '') +
     (e.precio > 0 && c > 0 ? '<span>margen ' + fEur.format(neto - c) + ' por persona</span>' : '') +
-    (c > 0 ? '<span>recomendado ' + fEur.format((c / 0.3) * 1.1) + '</span>' : '');
+    (c > 0 ? '<span>recomendado ' + fEur.format((c / 0.3) * 1.1) + '</span>' : '') +
+    (e.opciones && costeMenuMax(e) > c + 0.005 ? '<span>si todos eligen lo más caro: ' + fEur.format(costeMenuMax(e)) + (e.precio > 0 ? ' (' + fNum((costeMenuMax(e) / neto) * 100) + ' %)' : '') + '</span>' : '');
   e.platos.forEach((x, k) => {
     const o = q($('ev-lineas'), '[data-k="' + k + '"] [data-out="c"]'),
       p = idx().pl.get(x.id);
-    if (o && p) o.innerHTML = fEur.format(x.n * costeUd(p)) + (c > 0 ? '<small>' + fNum(((x.n * costeUd(p)) / c) * 100, 0) + ' % del menú</small>' : '');
+    if (o && p) o.innerHTML = fEur.format(x.n * costeUd(p)) + (c > 0 && !e.opciones ? '<small>' + fNum(((x.n * costeUd(p)) / c) * 100, 0) + ' % del menú</small>' : '');
   });
+  if ($('ev-niv')) $('ev-niv').innerHTML = nivelHTML(e);
   $('ev-compra').innerHTML = l.length
     ? '<ul class="ri">' +
       l
@@ -99,7 +104,7 @@ function vEventos() {
   if (!e) {
     evId = null;
     $('vista').innerHTML =
-      '<div class="bar"><span class="hint grow">Menús cerrados y eventos: junta varios platos, pon el precio por persona y verás el food cost del menú entero. Marca «Solo en menú» en los platos que no se venden sueltos para que no disparen el food cost general.</span><button class="btn primary" type="button" data-act="ev-nuevo">Nuevo</button>' +
+      '<div class="bar"><span class="hint grow">Junta varios platos, pon el precio por persona y verás el food cost del menú entero. Para crear uno rápido: en Platos, «Más › Seleccionar varios», marca los platos y «Crear un menú con ellos».</span><button class="btn primary" type="button" data-act="ev-nuevo">Nuevo</button>' +
       expHTML() +
       '</div>' +
       (S.eventos.length
@@ -112,7 +117,7 @@ function vEventos() {
                 '"><span class="n"><b>' +
                 esc(x.nombre || 'Menú sin nombre') +
                 '</b><span>' +
-                x.platos.length + (x.platos.length === 1 ? ' plato' : ' platos') +
+                resumenMenu(x) +
                 (x.precio > 0 ? ' · ' + fEur.format(x.precio) + ' por persona' : '') +
                 '</span></span><span class="d"><b>' +
                 fEur.format(costeEv(x)) +
@@ -138,18 +143,27 @@ function vEventos() {
     esc(show(e.pax)) +
     '"></div><div class="field"><label for="ev-precio">Precio por persona €</label><input class="num" id="ev-precio" data-ev="precio" type="text" inputmode="decimal" placeholder="con IVA" value="' +
     esc(show(e.precio)) +
-    '"></div></div></section>' +
-    '<section class="card"><h3>Platos del menú</h3><div class="rows" id="ev-lineas">' +
-    e.platos
-      .map((x, k) => {
-        const p = idx().pl.get(x.id);
+    '"></div>' +
+    '<label class="check wide" for="ev-encarta"><input type="checkbox" id="ev-encarta"' + (e.enCarta ? ' checked' : '') + '> Mostrar en la carta con su precio por persona</label>' +
+    '<label class="check wide" for="ev-opc"><input type="checkbox" id="ev-opc"' + (e.opciones ? ' checked' : '') + '> Menú con opciones: cada cliente elige 1 plato de cada tiempo (entrante, principal, postre…)</label></div></section>' +
+    '<section class="card"><h3>' + (e.opciones ? 'Opciones del menú' : 'Platos del menú') + '</h3>' +
+    (e.opciones ? '<p class="hint">Pon a cada plato su tiempo. El coste por persona es la media de las opciones de cada tiempo, no la suma de todo.</p>' : '') +
+    '<div class="rows" id="ev-lineas">' +
+    ordenLineasMenu(e)
+      .map(([x, k], j, arr) => {
+        const p = idx().pl.get(x.id),
+          tk = tmpo(x),
+          cab = e.opciones && (!j || tmpo(arr[j - 1][0]) !== tk);
         return (
+          (cab ? '<h4 class="ev-tiempo">' + esc(tk || 'Sin tiempo') + (tk ? ' <span class="hint">· elige 1 de ' + arr.filter((y) => tmpo(y[0]) === tk).length + '</span>' : ' <span class="hint">· van siempre en el menú</span>') + '</h4>' : '') +
           '<div class="row invrow" data-k="' +
           k +
           '"><div class="n"><b>' +
           esc(p ? p.nombre : 'Plato eliminado') +
           '</b><span>raciones por persona' + evSuelto(p) + '</span>' +
+          (e.opciones ? '<label class="mini ev-t"><span>Tiempo</span><input type="text" list="dl-tiempos" data-evt="' + k + '" value="' + esc(x.tiempo) + '" placeholder="Entrante, Principal, Postre…" autocomplete="off"></label>' : '') +
           (p && !p.base ? '<label class="check ev-solo"><input type="checkbox" data-evsolo="' + k + '"' + (p.soloMenu ? ' checked' : '') + '> Solo en menú</label>' : '') +
+          (p ? ingsMenuHTML(p, x.n) : '') +
           '</div><div class="q"><input class="num" data-evn="' +
           k +
           '" type="text" inputmode="decimal" aria-label="Raciones por persona" value="' +
@@ -162,6 +176,24 @@ function vEventos() {
     '<div class="acciones"><select id="ev-sel" aria-label="Plato para añadir" style="flex:1 1 180px">' +
     opcionesPlatos('') +
     '</select><button class="btn" type="button" data-act="ev-add">Añadir plato</button></div></section></div>' +
-    '<div class="col"><section class="card"><h3>Lista de la compra</h3><div id="ev-compra"></div><div class="acciones"><a class="btn primary small" id="ev-wa" target="_blank" rel="noopener">Enviar por WhatsApp</a><button class="btn danger small" type="button" data-act="ev-borrar">Eliminar menú</button></div></section></div></div>';
+    '<div class="col"><section class="card"><h3>Food cost nivelado</h3><div id="ev-niv"></div></section><section class="card"><h3>Lista de la compra</h3><div id="ev-compra"></div><div class="acciones"><a class="btn primary small" id="ev-wa" target="_blank" rel="noopener">Enviar por WhatsApp</a><button class="btn danger small" type="button" data-act="ev-borrar">Eliminar menú</button></div></section></div></div>';
   calcEv();
+}
+/* Resumen corto de un menú: «3 platos» o «3 tiempos · 7 opciones» */
+function resumenMenu(e) {
+  if (!e.opciones) return e.platos.length + (e.platos.length === 1 ? ' plato' : ' platos');
+  const n = Object.keys(tiemposMenu(e)).length;
+  return n + (n === 1 ? ' tiempo' : ' tiempos') + ' · ' + e.platos.length + (e.platos.length === 1 ? ' opción' : ' opciones');
+}
+/* Con opciones, las líneas se enseñan agrupadas por tiempo (en el orden en que aparece cada tiempo) */
+function ordenLineasMenu(e) {
+  const l = e.platos.map((x, k) => [x, k]);
+  if (!e.opciones) return l;
+  const orden = [];
+  e.platos.forEach((x) => {
+    const t = tmpo(x);
+    if (orden.indexOf(t) < 0) orden.push(t);
+  });
+  const pos = (t) => (t ? orden.indexOf(t) : 1e6);
+  return l.sort((a, z) => pos(tmpo(a[0])) - pos(tmpo(z[0])) || a[1] - z[1]);
 }

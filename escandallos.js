@@ -43,7 +43,7 @@ function eiRinde(x) {
   const g = x.ings.reduce((t, i) => t + (i.medida === 'ud' ? 0 : i.cantidad), 0);
   return g > 0 ? { n: r3(g / 1000), ub: 'kg', est: true } : { n: 1, ub: 'kg', est: true };
 }
-const eiSueltos = (x) => x.ings.filter((i) => !eiEnlace(i.nombre, x.platoId) && !eiCrea(i.nombre) && !eiDelLote(i.nombre)).length;
+const eiSueltos = (x) => x.ings.filter((i) => i.link !== 'nuevo' && i.link !== 'no' && !eiRef(i, x.platoId) && !eiCrea(i.nombre) && !eiDelLote(i.nombre)).length;
 /* De los ingredientes con precio salen los productos nuevos y los cambios de precio */
 function eiProductos() {
   const vistos = {},
@@ -52,6 +52,8 @@ function eiProductos() {
     x.ings.forEach((i) => {
       const k = norm(i.nombre);
       if (!k || !(i.precio > 0) || vistos[k] || basePorNombre(i.nombre) || eiDelLote(i.nombre)) return;
+      /* Si ya hay productos parecidos o se eligió uno, no se crea otro: se decide en el ingrediente */
+      if ((i.link && i.link !== 'nuevo') || (!prodPorNombre(i.nombre) && i.cands && i.cands.length)) return;
       vistos[k] = 1;
       const p = prodPorNombre(i.nombre),
         unidad = eiUnidad(i.medida);
@@ -67,7 +69,7 @@ async function importarEscandallos() {
     toast('La lectura de documentos necesita la IA activada.');
     return;
   }
-  const fs = await pedirArchivo('image/*,.pdf,.xlsx,.xls,.ods,.csv,.tsv,.txt', true);
+  const fs = await elegirArchivos('image/*,.pdf,.xlsx,.xls,.ods,.csv,.tsv,.txt', true);
   if (!fs.length) return;
   escImp = { estado: 'leyendo', paso: 'Abriendo ' + (fs.length === 1 ? fs[0].name : fs.length + ' archivos') + '…', platos: [], avisos: [] };
   pintar();
@@ -90,6 +92,37 @@ async function importarEscandallos() {
     pintar();
     return;
   }
+  await leerEscandallos(trabajos);
+}
+/* Receta escrita o pegada (de WhatsApp, de un correo, de una libreta…): mismo camino que los archivos */
+function abrirRecetaIA() {
+  if (!sAPI) return toast('La receta con IA necesita la IA activada.');
+  capa(
+    capaTop('Receta con IA', 'Escribe o pega la receta: la IA saca los ingredientes, los enlaza con Precios y calcula el coste.') +
+      '<form id="form-receta-ia" class="col" novalidate><div class="field"><label for="ri-txt">Receta</label><textarea id="ri-txt" rows="10" maxlength="20000" placeholder="Salsa pecorino (rinde 2 L)\n1 L de nata\n400 g de pecorino rallado\n200 g de mantequilla\npimienta negra\n\nFundir la mantequilla, añadir la nata…"></textarea></div>' +
+      '<label class="check"><input type="checkbox" id="ri-elab"> Es una elaboración de la casa (salsa, masa, fondo…), no un plato de la carta</label>' +
+      '<div class="acciones"><button class="btn primary" type="submit">Leer receta</button><button class="btn" type="button" data-capa="cerrar">Cancelar</button></div>' +
+      '<p class="hint">¿La tienes en foto, PDF o Excel? Usa «Importar escandallos»: también puedes subir varios a la vez.</p></form>',
+  );
+  $('ri-txt').focus();
+}
+document.addEventListener('submit', (e) => {
+  if (e.target.id !== 'form-receta-ia') return;
+  e.preventDefault();
+  const t = $('ri-txt').value.trim();
+  if (t.length < 10) {
+    toast('Escribe la receta con sus ingredientes.');
+    $('ri-txt').focus();
+    return;
+  }
+  const elab = $('ri-elab').checked;
+  cerrarCapa();
+  escImp = { estado: 'leyendo', paso: 'Leyendo la receta…', platos: [], avisos: [], forzarElab: elab };
+  if (pant !== 'carta') location.hash = enElab() || elab ? '#carta-elaboraciones' : '#carta-platos';
+  pintar();
+  leerEscandallos(trocear(t, 7000).map((c) => ({ texto: c })));
+});
+async function leerEscandallos(trabajos) {
   const listas = eiListas(),
     porNombre = {};
   let seguidos = 0;
@@ -130,7 +163,7 @@ async function importarEscandallos() {
         const ex = eiPlato(nombre),
           rm = /^ml$/i.test(String(p.rinde_medida)) ? 'ml' : /^(ud|uds|unidad|unidades)$/i.test(String(p.rinde_medida)) ? 'ud' : 'g',
           x = {
-            elab: ex ? !!ex.base : enElab() || /^elab/i.test(String(p.tipo || '')),
+            elab: ex ? !!ex.base : escImp.forzarElab || enElab() || /^elab/i.test(String(p.tipo || '')),
             rinde: Number(p.rinde) > 0 ? r3(rm === 'ud' ? Number(p.rinde) : Number(p.rinde) / 1000) : 0,
             ub: eiUnidad(rm),
             nombre,
@@ -164,9 +197,79 @@ async function importarEscandallos() {
     pintar();
     return;
   }
+  escImp.paso = 'Buscando cada ingrediente en Precios…';
+  if (pant === 'carta') vEscImp();
+  await eiEmparejar();
+  if (!escImp) return;
   escImp.prods = eiProductos();
   escImp.estado = 'revisar';
   pintar();
+}
+/* ---- Enlazar cada ingrediente con su producto ----
+   Primero por nombre exacto; si no, se buscan los productos parecidos y la IA (modelo barato,
+   solo con esos candidatos, no con toda la lista) elige el que es de verdad el mismo.
+   Si duda, no elige: se ofrecen las opciones y quien revisa decide. */
+function eiCandidatos(nombre, n) {
+  const q = norm(nombre)
+    .split(' ')
+    .filter((w) => w.length > 2 && !FAM_VACIAS.has(w))
+    .map(famSingular);
+  if (!q.length) return [];
+  const todos = S.productos.map((p) => ({ ref: 'p:' + p.id, nombre: p.nombre, extra: p.proveedor ? p.proveedor + ' · ' + UDP[p.unidad] : UDP[p.unidad] }))
+    .concat(S.platos.filter((b) => b.base).map((b) => ({ ref: 'b:' + b.id, nombre: b.nombre, extra: 'elaboración de la casa' })));
+  return todos
+    .map((c) => {
+      const ws = norm(c.nombre).split(' ').map(famSingular),
+        comunes = q.filter((w) => ws.indexOf(w) >= 0).length;
+      return { c: c, s: comunes / Math.max(q.length, ws.length) + (ws[0] === q[0] ? 0.3 : 0) };
+    })
+    .filter((x) => x.s > 0.2)
+    .sort((a, z) => z.s - a.s)
+    .slice(0, n || 6)
+    .map((x) => x.c);
+}
+const eiRef = (i, salvo) => {
+  if (i.link) return i.link;
+  const pr = prodPorNombre(i.nombre);
+  if (pr) return 'p:' + pr.id;
+  const bs = basePorNombre(i.nombre, salvo);
+  return bs ? 'b:' + bs.id : '';
+};
+async function eiEmparejar() {
+  const pend = [];
+  escImp.platos.forEach((x) =>
+    x.ings.forEach((i) => {
+      if (eiRef(i, x.platoId) || eiDelLote(i.nombre)) return;
+      i.cands = eiCandidatos(i.nombre, 6);
+      if (i.cands.length) pend.push(i);
+    }),
+  );
+  if (!pend.length || !sAPI) return;
+  try {
+    const r = await sAPI.json(
+      'Eres jefe de compras de una cocina. Para cada ingrediente de una receta, elige de SU lista de candidatos el producto que sea exactamente el mismo (mismo producto, variedad y presentación; la marca da igual). ' +
+        'Si ninguno es el mismo o dudas, pon 0. Responde SOLO con JSON: {"r":[{"i":número del ingrediente,"c":número del candidato o 0}]}\n' +
+        pend.slice(0, 60).map((i, k) => k + 1 + '. ' + i.nombre + ' → ' + i.cands.map((c, j) => j + 1 + ') ' + c.nombre + ' (' + c.extra + ')').join('; ')).join('\n'),
+      { nivel: 'simple' },
+    );
+    (r && Array.isArray(r.r) ? r.r : []).forEach((x) => {
+      const i = pend[(Number(x.i) || 0) - 1],
+        c = i && i.cands[(Number(x.c) || 0) - 1];
+      if (c) {
+        i.link = c.ref;
+        i.sugIA = true;
+      }
+    });
+  } catch (e) {
+    /* Sin la IA se ofrecen igual los parecidos para elegir a mano */
+  }
+}
+/* Coste del plato tal y como quedaría con los enlaces elegidos */
+function eiCoste(x) {
+  const p = nPlato({ id: '__ei', nombre: x.nombre, raciones: x.elab ? eiRinde(x).n : x.raciones || 1, base: x.elab, unidadBase: eiRinde(x).ub, ingredientes: x.ings.map((i) => eiIngrediente(i, x.platoId)) }),
+    total = costePlato(p),
+    sin = p.ingredientes.filter((i) => !(pre(i) > 0)).length;
+  return { total: total, porUd: total / (p.raciones > 0 ? p.raciones : 1), sin: sin, p: p };
 }
 const eiCant = (i) => fNum(i.cantidad, 2) + ' ' + i.medida;
 function eiFila(x, k) {
@@ -182,9 +285,51 @@ function eiFila(x, k) {
     (ex ? '' : '<select data-ei="tipo" aria-label="Qué es"><option value="plato"' + (x.elab ? '' : ' selected') + '>Plato de la carta</option><option value="elab"' + (x.elab ? ' selected' : '') + '>Elaboración de la casa</option></select>') + '</div>' +
     '<div class="ei-e">' + (ex ? '<span class="pill crit">Sustituye la ficha</span><small>cambia los ' + ex.ingredientes.length + ' ingredientes de ahora</small>' : '<span class="pill ok">Nuevo</span>') +
     (sueltos ? '<small>' + sueltos + (sueltos === 1 ? ' ingrediente' : ' ingredientes') + ' sin enlazar con Precios</small>' : '') + '</div>' +
-    '<details class="ei-d"><summary>Ver ingredientes</summary><ul>' +
-    x.ings.map((i) => '<li><span>' + esc(eiCant(i)) + (i.merma ? ' · merma ' + fNum(i.merma) + ' %' : '') + '</span><b>' + esc(i.nombre) + '</b>' + (eiEnlace(i.nombre, x.platoId) ? '' : eiDelLote(i.nombre) ? '<em class="ok">elaboración de esta importación</em>' : eiCrea(i.nombre) ? '<em class="ok">se crea en Precios</em>' : '<em>sin enlazar' + (i.precio ? ' · ' + fEur.format(i.precio) : '') + '</em>') + '</li>').join('') +
+    (function () {
+      const co = eiCoste(x);
+      return (
+        '<p class="ei-coste"><b>Coste: ' + fEur.format(co.total) + '</b>' +
+        (x.elab ? ' · ' + fEur.format(co.porUd) + UDP[co.p.unidadBase].slice(1) : (x.raciones > 1 ? ' · ' + fEur.format(co.porUd) + ' por ración' : '') + (x.pvp > 0 ? ' · food cost ' + fNum((co.porUd / (x.pvp / 1.1)) * 100, 0) + ' %' : '')) +
+        (co.sin ? ' <span class="hint">(' + co.sin + (co.sin === 1 ? ' ingrediente sin precio' : ' ingredientes sin precio') + ')</span>' : '') + '</p>'
+      );
+    })() +
+    '<details class="ei-d"' + (sueltos || x.verIngs ? ' open' : '') + '><summary>' + (sueltos ? 'Revisa los ingredientes (' + sueltos + ' sin enlazar)' : 'Ver ingredientes') + '</summary><ul>' +
+    x.ings.map((i, j) => eiIngHTML(x, k, i, j)).join('') +
     '</ul></details></div>'
+  );
+}
+/* Un ingrediente en la revisión: con qué producto queda enlazado y cuánto cuesta */
+function eiIngHTML(x, k, i, j) {
+  const ref = eiRef(i, x.platoId),
+    lote = !ref && eiDelLote(i.nombre),
+    crea = !ref && eiCrea(i.nombre),
+    fi = eiIngrediente(i, x.platoId),
+    c = fi.productoId || fi.baseId ? coste(fi) : 0,
+    cabeza = '<span>' + esc(eiCant(i)) + (i.merma ? ' · merma ' + fNum(i.merma) + ' %' : '') + '</span><b>' + esc(i.nombre) + '</b>';
+  if (lote) return '<li>' + cabeza + '<em class="ok">elaboración de esta importación</em></li>';
+  if (crea && !i.link) return '<li>' + cabeza + '<em class="ok">se crea en Precios</em></li>';
+  const fijo = ref && !i.link && !i.cands; // enlazado por nombre exacto
+  if (fijo) return '<li>' + cabeza + '<em class="ok">' + esc(fi.nombre !== i.nombre ? '→ ' + fi.nombre + ' · ' : '') + fEur.format(c) + '</em></li>';
+  const cands = (i.cands || eiCandidatos(i.nombre, 6)).slice();
+  if (ref && !cands.some((y) => y.ref === ref)) {
+    const o = ref.indexOf('p:') === 0 ? prod(ref.slice(2)) : plato(ref.slice(2));
+    if (o) cands.unshift({ ref: ref, nombre: o.nombre, extra: ref.indexOf('p:') === 0 ? UDP[o.unidad] : 'elaboración de la casa' });
+  }
+  const val = i.link === 'nuevo' ? 'nuevo' : i.link === 'no' ? 'no' : ref || '';
+  return (
+    '<li class="ei-sin" data-ing="' + j + '">' + cabeza +
+    '<div class="ei-link"><select data-eil="ref" aria-label="Producto para ' + esc(i.nombre) + '">' +
+    (val ? '' : '<option value="" selected>Elige con qué producto va…</option>') +
+    cands.map((y) => '<option value="' + esc(y.ref) + '"' + (y.ref === val ? ' selected' : '') + '>' + esc(y.nombre + ' · ' + y.extra) + '</option>').join('') +
+    '<option value="nuevo"' + (val === 'nuevo' ? ' selected' : '') + '>＋ Crear «' + esc(i.nombre) + '» en Precios</option>' +
+    '<option value="no"' + (val === 'no' ? ' selected' : '') + '>Dejar sin enlazar</option></select>' +
+    '<input type="text" data-eil="otro" list="dl-solo-prod" autocomplete="off" placeholder="…u otro producto" aria-label="Buscar otro producto para ' + esc(i.nombre) + '">' +
+    (i.link === 'nuevo'
+      ? '<span class="precio ei-np"><input class="num" type="text" inputmode="decimal" data-eil="precio" aria-label="Precio de compra de ' + esc(i.nombre) + '" placeholder="Precio" value="' + show(i.precio) + '"><span class="ei-u">' + UDP[eiUnidad(i.medida)] + '</span></span>'
+      : '') +
+    (i.sugIA && ref ? '<small class="hint">Lo sugiere la IA: compruébalo.</small>' : '') +
+    (ref ? '<small class="ei-c">' + fEur.format(c) + (un(fi) === 'ud' && i.medida !== 'ud' ? ' · ojo: el producto va por unidades' : '') + '</small>' : '') +
+    '</div></li>'
   );
 }
 function vEscImp() {
@@ -227,9 +372,11 @@ function eiProdFila(q, k) {
 }
 /* Convierte un ingrediente leído en uno de la ficha, enlazado si el nombre coincide */
 function eiIngrediente(i, salvo) {
-  const pr = prodPorNombre(i.nombre),
-    bs = pr ? null : basePorNombre(i.nombre, salvo),
+  const l = i.link === 'no' ? '' : i.link || '',
+    pr = l.indexOf('p:') === 0 ? prod(l.slice(2)) : l ? null : prodPorNombre(i.nombre),
+    bs = pr ? null : l.indexOf('b:') === 0 ? (plato(l.slice(2)) && plato(l.slice(2)).base ? plato(l.slice(2)) : null) : l ? null : basePorNombre(i.nombre, salvo),
     base = { cantidad: i.cantidad, merma: i.merma };
+  if (i.link === 'no') return Object.assign(base, { nombre: i.nombre, productoId: '', baseId: '', precio: i.precio, unidad: eiUnidad(i.medida) });
   if (pr) return Object.assign(base, { nombre: pr.nombre, productoId: pr.id, baseId: '', precio: pr.precio, unidad: pr.unidad });
   if (bs) return Object.assign(base, { nombre: bs.nombre, productoId: '', baseId: bs.id, precio: r3(costeUd(bs)), unidad: bs.unidadBase });
   return Object.assign(base, { nombre: i.nombre, productoId: '', baseId: '', precio: i.precio, unidad: eiUnidad(i.medida) });
@@ -260,13 +407,28 @@ function aplicarEscandallos() {
         p.actualizado = ahora;
         precios++;
       } else {
-        p = nProd({ id: nuevoId('productos'), nombre: q.nombre, proveedor: q.proveedor.trim(), precio: q.precio, unidad: q.unidad, actualizado: ahora });
+        p = nProd({ area: areaNueva(), id: nuevoId('productos'), nombre: q.nombre, proveedor: q.proveedor.trim(), precio: q.precio, unidad: q.unidad, actualizado: ahora });
         S.productos.push(p);
         prodNuevos++;
       }
       sucio();
       guardar('productos', p, true);
     });
+  /* Ingredientes que se pidió crear en Precios */
+  sel.forEach((x) =>
+    x.ings.forEach((i) => {
+      if (i.link !== 'nuevo') return;
+      let p = prodPorNombre(i.nombre);
+      if (!p) {
+        p = nProd({ area: areaNueva(), id: nuevoId('productos'), nombre: i.nombre.trim(), proveedor: (i.proveedor || '').trim(), precio: i.precio || 0, unidad: eiUnidad(i.medida), actualizado: ahora });
+        S.productos.push(p);
+        guardar('productos', p, true);
+        prodNuevos++;
+        sucio();
+      }
+      i.link = 'p:' + p.id;
+    }),
+  );
   sel.forEach((x) => {
     let p = x.platoId ? plato(x.platoId) : null;
     if (p) {
@@ -285,8 +447,8 @@ function aplicarEscandallos() {
     } else {
       const rd = eiRinde(x);
       p = x.elab
-        ? nPlato({ id: nuevoId('platos'), nombre: x.nombre.trim(), base: true, raciones: rd.n, unidadBase: rd.ub, elaboracion: x.elaboracion, ingredientes: [] })
-        : nPlato({ id: nuevoId('platos'), nombre: x.nombre.trim(), raciones: x.raciones || 1, pvp: x.pvp, grupo: x.grupo, elaboracion: x.elaboracion, ingredientes: [] });
+        ? nPlato({ area: areaNueva(), id: nuevoId('platos'), nombre: x.nombre.trim(), base: true, raciones: rd.n, unidadBase: rd.ub, elaboracion: x.elaboracion, ingredientes: [] })
+        : nPlato({ area: areaNueva(), id: nuevoId('platos'), nombre: x.nombre.trim(), raciones: x.raciones || 1, pvp: x.pvp, grupo: x.grupo, elaboracion: x.elaboracion, ingredientes: [] });
       p.ingredientes = x.ings.map((i) => eiIngrediente(i, p.id));
       S.platos.push(p);
       nuevos++;
@@ -309,6 +471,7 @@ V.addEventListener('click', (e) => {
   if (!b) return;
   const a = b.dataset.act;
   if (a === 'ei-importar') importarEscandallos();
+  else if (a === 'ei-texto') abrirRecetaIA();
   else if (a === 'ei-cancelar') {
     escImp = null;
     pintar();
@@ -325,6 +488,26 @@ V.addEventListener('change', (e) => {
     else if (t.dataset.ep === 'precio') q.precio = Math.round(parse(t.value) * 1000) / 1000;
     else if (t.dataset.ep === 'proveedor') q.proveedor = t.value.trim();
     vEscImp();
+    return;
+  }
+  if (f && escImp && t.dataset.eil) {
+    const x = escImp.platos[Number(f.dataset.k)],
+      li = t.closest('[data-ing]'),
+      i = x && li ? x.ings[Number(li.dataset.ing)] : null;
+    if (!i) return;
+    x.verIngs = true; // que no se cierre la lista mientras se revisa
+    if (t.dataset.eil === 'ref') {
+      i.link = t.value;
+      i.sugIA = false;
+    } else if (t.dataset.eil === 'otro') {
+      const p = prodPorNombre(t.value) || basePorNombre(t.value, x.platoId);
+      if (!p) return toast('No hay ningún producto con ese nombre.');
+      i.link = (p.base ? 'b:' : 'p:') + p.id;
+      i.sugIA = false;
+    } else if (t.dataset.eil === 'precio') i.precio = Math.round(parse(t.value) * 1000) / 1000;
+    const y = scrollY;
+    vEscImp();
+    scrollTo(0, y);
     return;
   }
   if (!f || !escImp || !t.dataset.ei) return;

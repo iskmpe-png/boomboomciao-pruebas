@@ -295,14 +295,20 @@ const dlP = Promise.resolve(
 ).catch(() => null);
 async function exportar(tipo) {
   const inf = informe();
-  if (!inf) {
+  if (!inf || (Array.isArray(inf) && !inf.length)) {
     toast('No hay nada que exportar aquí.');
     return;
   }
+  return exportarInf(inf, tipo);
+}
+/* Un informe o varios (varias hojas en Excel, varias tablas seguidas en PDF) */
+async function exportarInf(inf, tipo) {
+  const infs = [].concat(inf),
+    pri = infs[0];
   toast('Preparando el archivo…');
   let blob;
   try {
-    if (tipo === 'xlsx') blob = xlsxDe(inf);
+    if (tipo === 'xlsx') blob = xlsxDe(infs);
     else {
       try {
         await Promise.all(
@@ -315,14 +321,14 @@ async function exportar(tipo) {
           ].map((f) => document.fonts.load(f)),
         );
       } catch (e) {}
-      const cvs = lienzos(inf, tipo === 'pdf');
+      const cvs = tipo === 'pdf' ? [].concat(...infs.map((i) => lienzos(i, true))) : lienzos(pri, false);
       blob = tipo === 'pdf' ? pdfDe(cvs) : await new Promise((ok) => cvs[0].toBlob(ok, 'image/png'));
     }
   } catch (e) {
     toast('No se pudo preparar el archivo.');
     return;
   }
-  await entregar(blob, 'BoomBoomCiao-' + (norm(inf.titulo).replace(/ /g, '-') || 'informe') + '-' + hoy() + '.' + tipo);
+  await entregar(blob, 'BoomBoomCiao-' + (norm(pri.titulo).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'informe') + '-' + hoy() + '.' + tipo);
 }
 async function entregar(blob, nombre) {
   const dl = await dlP;

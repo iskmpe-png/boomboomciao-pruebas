@@ -48,8 +48,8 @@ function irResultado(x) {
   }
   if (x.manual != null) {
     manF = x.manual;
-    if (location.hash === '#inicio-manual') pintar();
-    else location.hash = '#inicio-manual';
+    if (location.hash === '#control-manual') pintar();
+    else location.hash = '#control-manual';
     return;
   }
   if (x.mes) mesM = x.mes;

@@ -20,34 +20,8 @@ const capaTop = (t, s) =>
   (s ? '<p class="hint">' + esc(s) + '</p>' : '') +
   '</div><button class="btn" type="button" data-capa="cerrar">Cerrar</button></div>';
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !$('capa').hidden) cerrarCapa();
+  if (e.key === 'Escape' && !$('capa').hidden && !(typeof pedirLegalAbierto !== 'undefined' && pedirLegalAbierto)) cerrarCapa();
 });
-function verLegal() {
-  const L = (CFG && CFG.legal) || {},
-    resp = L.responsable || 'la empresa titular del restaurante',
-    falta = (v) => v || 'pendiente de completar';
-  capa(
-    capaTop('Aviso legal y privacidad', 'Cómo se tratan tus datos en esta aplicación') +
-      '<div class="mx-lista legal">' +
-      '<h3>Quién es el responsable</h3><p>' +
-      esc(resp) +
-      (L.cif ? ' · NIF ' + esc(L.cif) : '') +
-      '. Dirección: ' +
-      esc(falta(L.direccion)) +
-      '. Contacto para privacidad: ' +
-      esc(falta(L.email)) +
-      '.</p>' +
-      '<h3>Qué datos se guardan</h3><p>Tu nombre, tu correo y tu contraseña (cifrada, nadie puede leerla). También queda registro de lo que haces en la app: qué creas, cambias o eliminas y cuándo. La app no pide ni guarda datos de salud, bancarios ni de localización.</p>' +
-      '<h3>Para qué se usan</h3><p>Para darte acceso, saber quién ha hecho cada cambio y gestionar la cocina: costes, compras, inventario, mermas y registros de seguridad alimentaria. No se usan para publicidad ni se venden a nadie.</p>' +
-      '<h3>Con qué base legal</h3><p>La gestión de la relación laboral y el interés legítimo de la empresa en organizar y controlar su actividad.</p>' +
-      '<h3>Quién más interviene</h3><p>Proveedores técnicos que prestan servicio a la empresa: Supabase (base de datos y cuentas' +
-      (L.region ? ', con servidores en ' + esc(L.region) : '') +
-      '), GitHub (alojamiento de la aplicación) y Google (asistente y lectura de albaranes; solo recibe los datos de cocina que se le consultan y las fotos de albaranes que se escanean).</p>' +
-      '<h3>Cuánto tiempo</h3><p>Mientras tengas acceso a la aplicación. Cuando dejes de tenerlo, tu cuenta se elimina; el registro de cambios se conserva el tiempo necesario para las obligaciones de la empresa.</p>' +
-      '<h3>Tus derechos</h3><p>Puedes pedir acceso a tus datos, corregirlos, eliminarlos, limitar su uso u oponerte, escribiendo al contacto de privacidad. Si no quedas conforme, puedes reclamar ante la Agencia Española de Protección de Datos (aepd.es).</p>' +
-      '<h3>Uso de la aplicación</h3><p>La cuenta es personal: no compartas tu contraseña. Los datos de costes, precios y proveedores son confidenciales de la empresa y no deben copiarse fuera de ella.</p></div>',
-  );
-}
 /* Copias automáticas (una al día, guardadas 30 días) */
 let copias = null;
 function verCopias(msg) {

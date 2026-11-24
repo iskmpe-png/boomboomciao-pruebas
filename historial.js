@@ -14,7 +14,7 @@ const HCAMPO = {
   objetivo: 'Objetivo de food cost %',
   iva: 'IVA %',
   elaboracion: 'Elaboración',
-  grupo: 'Carta o menú',
+  grupo: 'Grupo de la carta',
   descripcion: 'Descripción',
   vino: 'Vino',
   alergenos: 'Alérgenos',
@@ -22,6 +22,9 @@ const HCAMPO = {
   minimo: 'Stock mínimo',
   familia: 'Grupo para comparar',
   soloMenu: 'Solo en menú',
+  area: 'Zona',
+  alias: 'Nombres en el TPV',
+  enCarta: 'En la carta',
   cantidad: 'Cantidad',
   merma: 'Merma %',
   fecha: 'Fecha',
@@ -54,7 +57,7 @@ const HCAMPO = {
   platos: 'Platos',
   n: 'Cantidad',
 };
-const HSKIP = { actualizado: 1, historial: 1, anterior: 1, creado: 1, por: 1, id: 1, semanas: 1, importes: 1 };
+const HSKIP = { img: 1, actualizado: 1, historial: 1, anterior: 1, creado: 1, por: 1, id: 1, semanas: 1, importes: 1 };
 const hn = (x) =>
   x.nombre ||
   (prod(x.productoId) || {}).nombre ||
@@ -292,6 +295,7 @@ V.addEventListener('click', (e) => {
   const en = e.target.closest('[data-env]');
   if (en) {
     pedEnv[en.dataset.env] = true;
+    registrarPedido(en.dataset.env);
     setTimeout(() => {
       if (pant === 'pedidos') vPedidos();
     }, 600);
@@ -319,7 +323,8 @@ V.addEventListener('click', (e) => {
     vPedidos();
   } else if (a === 'ped-copiar') {
     const tx = pedTexto(pedGrupos()[b.dataset.k] || []);
-    const ok = () => toast('Pedido copiado.');
+    registrarPedido(b.dataset.k);
+    const ok = () => toast('Pedido copiado. Queda guardado para cuadrarlo con el albarán.');
     try {
       navigator.clipboard.writeText(tx).then(ok, () => toast('No se pudo copiar aquí.'));
     } catch (er) {

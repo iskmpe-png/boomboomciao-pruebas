@@ -299,20 +299,6 @@ function informeNuevo() {
       pie: [],
     };
   }
-  if (pant === 'compras') {
-    const l = delMes(S.compras).sort((a, z) => a.fecha.localeCompare(z.fecha));
-    return {
-      titulo: 'Compras',
-      sub: fMes(mesM) + ' · sin IVA',
-      cols: [
-        { t: 'Fecha', w: 1.4 },
-        { t: 'Proveedor', w: 3 },
-        { t: 'Albarán', w: 2 },
-        { t: 'Importe', w: 1.4, r: 1 },
-      ],
-      filas: l.map((c) => [T(fFecha(c.fecha)), T(c.proveedor), T(c.albaran), E(c.importe)]),
-      pie: [['Total de compras', E(suma(l, (c) => c.importe))]],
-    };
-  }
+  if (pant === 'compras') return infCompras();
   return undefined;
 }

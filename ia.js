@@ -38,7 +38,10 @@ function iaNube() {
         m = (await r.json()).error || '';
       } catch (e) {}
       if (r.status === 404) m = 'La IA todavía no está activada en el servidor.';
-      throw E(r.status === 429 ? 'rate_limited' : 'unavailable', m || 'La IA no está disponible ahora mismo.');
+      const er = E(r.status === 429 ? 'rate_limited' : 'unavailable', m || 'La IA no está disponible ahora mismo.');
+      /* Solo merece la pena repetir si Google estaba saturado o la función se quedó sin tiempo */
+      er.pasajero = r.status === 503 || r.status === 504 || r.status === 546 || /saturad|high demand|try again|overloaded/i.test(m);
+      throw er;
     }
     return r;
   }
@@ -72,25 +75,66 @@ function iaNube() {
     }
     return { text: text, truncated: false };
   };
-  f.json = async (prompt, opts) => {
-    opts = opts || {};
-    const imgs = await Promise.all((opts.images || []).map(b64));
-    const r = await llamar({ modo: 'json', texto: prompt, imagenes: imgs }, opts.signal),
+  async function jsonUnaVez(prompt, imgs, opts) {
+    const r = await llamar({ modo: 'json', texto: prompt, imagenes: imgs, nivel: opts.nivel || '' }, opts.signal),
       j = await r.json().catch(() => null);
-    let t = String((j && j.text) || '')
+    const t = String((j && j.text) || '')
       .trim()
       .replace(/^```(?:json)?\s*/i, '')
       .replace(/```\s*$/, '');
-    const a = t.indexOf('{'),
-      z = t.lastIndexOf('}');
-    try {
-      return JSON.parse(a >= 0 && z > a ? t.slice(a, z + 1) : t);
-    } catch (e) {
-      throw E('invalid_json');
+    const d = leerJSON(t);
+    if (d == null) throw E('invalid_json');
+    return d;
+  }
+  /* Si falla por algo pasajero (red, IA saturada, respuesta cortada) se vuelve a intentar sola */
+  f.json = async (prompt, opts) => {
+    opts = opts || {};
+    const imgs = await Promise.all((opts.images || []).map(b64));
+    for (let intento = 0; ; intento++) {
+      try {
+        return await jsonUnaVez(prompt, imgs, opts);
+      } catch (e) {
+        const max = e && (e.code === 'red' || e.code === 'invalid_json') ? 2 : e && e.code === 'unavailable' && e.pasajero ? 1 : 0;
+        if (intento >= max || (opts.signal && opts.signal.aborted)) throw e;
+        await new Promise((ok) => setTimeout(ok, 2000 * (intento + 1)));
+      }
     }
   };
   f.limits = () => Promise.resolve({ images: { mediaTypes: ['image/jpeg', 'image/png', 'image/webp'], maxCount: 4 } });
   return f;
+}
+/* Lee el JSON de la IA. Si la respuesta llegó cortada (pasa con listas muy largas),
+   se queda con todo lo que estaba completo en vez de perderlo entero. */
+function leerJSON(t) {
+  const a = t.indexOf('{');
+  if (a < 0) return null;
+  t = t.slice(a);
+  try {
+    return JSON.parse(t.slice(0, t.lastIndexOf('}') + 1));
+  } catch (e) {}
+  let fin = t.length;
+  for (let n = 0; n < 60; n++) {
+    fin = t.lastIndexOf('}', fin - 1);
+    if (fin < 0) return null;
+    const trozo = t.slice(0, fin + 1),
+      pila = [];
+    let enTexto = false,
+      esc = false;
+    for (const ch of trozo) {
+      if (enTexto) {
+        if (esc) esc = false;
+        else if (ch === '\\') esc = true;
+        else if (ch === '"') enTexto = false;
+      } else if (ch === '"') enTexto = true;
+      else if (ch === '{' || ch === '[') pila.push(ch === '{' ? '}' : ']');
+      else if (ch === '}' || ch === ']') pila.pop();
+    }
+    if (enTexto) continue;
+    try {
+      return JSON.parse(trozo + pila.reverse().join(''));
+    } catch (e) {}
+  }
+  return null;
 }
 function nube() {
   try {
@@ -113,11 +157,7 @@ function local() {
         S[c] = (d[c] || []).map(NORM[c]);
       });
       if (d.ajustes)
-        S.ajustes = {
-          id: 'empresa',
-          nombre: String(d.ajustes.nombre || ''),
-          periodo: PER[d.ajustes.periodo] ? d.ajustes.periodo : 'mensual',
-        };
+        S.ajustes = nAjustes(d.ajustes);
     }
   } catch (e) {}
   sucio();
@@ -172,7 +212,11 @@ function remoto(d) {
     (s) => {
       if (!s.exists || busy('ajustes', 'empresa')) return;
       const x = s.data() || {};
-      S.ajustes = { id: 'empresa', nombre: String(x.nombre || ''), periodo: PER[x.periodo] ? x.periodo : 'mensual' };
+      const antes = S.ajustes.grupos.join('|');
+      S.ajustes = nAjustes(x);
+      dlSucio = true;
+      /* Si otro dispositivo cambió los grupos de la carta, se vuelve a pintar la lista */
+      if (antes !== S.ajustes.grupos.join('|') && pant === 'carta' && !abierta && !escImp) pintar();
     },
     () => {},
   );
