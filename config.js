@@ -17,5 +17,5 @@ window.BBC_SUPABASE = {
   },
   // Captcha contra robots al crear cuenta (Cloudflare Turnstile, gratis). Déjalo vacío para no usarlo.
   // Si lo pones, guarda también el secreto TURNSTILE_SECRET en la función «cuentas» de Supabase.
-  turnstile: ''
+  turnstile: '0x4AAAAAAGRvA04NYJQ7xkLW'
 };
