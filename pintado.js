@@ -71,31 +71,44 @@ function pintar() {
   if (typeof pintaRecordatorio === 'function') pintaRecordatorio();
   if (!listo()) return;
   pintarListas();
-  ({
-    carta: vCarta,
-    precios: vPrecios,
-    recetas: vRecetas,
-    inventario: vInventario,
-    mermas: vMermas,
-    panel: () => (puede(2) ? vPanel() : vTablon()),
-    sala: vSala,
-    ingenieria: vIng,
-    eventos: vEventos,
-    comparar: vComparar,
-    alertas: vAlertas,
-    produccion: vProduccion,
-    etiquetas: vEtiquetas,
-    appcc: vAppcc,
-    pedidos: vPedidos,
-    compras: vCompras,
-    asistente: vAsistente,
-    proveedores: vProveedores,
-    historial: vHistorial,
-    grupo: vGrupo,
-    manual: vManual,
-    turnos: vTurnos,
-    consumo: vConsumo,
-  })[pant]();
+  // Por nombre: si un módulo no llegó a cargar (p. ej. un 503 de GitHub Pages), se avisa en vez de lanzar ReferenceError.
+  const fn =
+    pant === 'panel'
+      ? puede(2)
+        ? window.vPanel
+        : window.vTablon
+      : window[
+          ({
+              carta: 'vCarta',
+              precios: 'vPrecios',
+              recetas: 'vRecetas',
+              inventario: 'vInventario',
+              mermas: 'vMermas',
+              sala: 'vSala',
+              ingenieria: 'vIng',
+              eventos: 'vEventos',
+              comparar: 'vComparar',
+              alertas: 'vAlertas',
+              produccion: 'vProduccion',
+              etiquetas: 'vEtiquetas',
+              appcc: 'vAppcc',
+              pedidos: 'vPedidos',
+              compras: 'vCompras',
+              asistente: 'vAsistente',
+              proveedores: 'vProveedores',
+              historial: 'vHistorial',
+              grupo: 'vGrupo',
+              manual: 'vManual',
+              turnos: 'vTurnos',
+              consumo: 'vConsumo',
+          })[pant]
+        ];
+  if (typeof fn !== 'function') {
+    $('vista').innerHTML =
+      '<section class="card estado"><strong>No se pudo cargar esta sección</strong><span>Revisa la conexión y recarga la página.</span></section>';
+    return;
+  }
+  fn();
 }
 function refrescar() {
   const a = document.activeElement,

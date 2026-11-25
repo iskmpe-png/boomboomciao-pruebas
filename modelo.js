@@ -225,8 +225,12 @@ const nVenta = (v) => ({
   menus: mapa(v.menus),
   enMenu: mapa(v.enMenu),
 });
-/* Foto de un plato: una miniatura JPEG pequeña guardada como texto, con el id del plato */
-const nFoto = (f) => ({ id: f.id, img: /^data:image\/(jpeg|webp|png);base64,[A-Za-z0-9+/=]+$/.test(String(f.img || '')) ? String(f.img) : '' });
+/* Foto de un plato, con el id del plato: la ruta en el almacén «fotos» o, en las antiguas, la miniatura JPEG como texto */
+const nFoto = (f) => ({
+  id: f.id,
+  img: /^data:image\/(jpeg|webp|png);base64,[A-Za-z0-9+/=]+$/.test(String(f.img || '')) ? String(f.img) : '',
+  ruta: /^[0-9a-f-]{36}\/[A-Za-z0-9_-]{1,60}-[a-z0-9]{1,12}\.jpg$/.test(String(f.ruta || '')) ? String(f.ruta) : '',
+});
 const nPlan = (v) => ({ id: v.id, items: mapa(v.items), hecho: mapa(v.hecho) });
 const nEvento = (e) => ({
   id: e.id,

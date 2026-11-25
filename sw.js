@@ -1,6 +1,6 @@
 /* Boom Boom Ciao: guarda la app en el dispositivo para que abra sin conexión.
    Sube el número de versión cada vez que publiques cambios. */
-const CACHE = 'bbc-v31';
+const CACHE = 'bbc-v32';
 const BASE = [
   "./",
   "index.html",
@@ -140,6 +140,23 @@ self.addEventListener('fetch', (e) => {
     }
     return res;
   };
+  // config.js dice a qué base de datos conectarse: siempre se pide al servidor primero, para que un
+  // cambio de config llegue a todos los móviles sin esperar a una versión nueva. Sin conexión, la guardada.
+  if (/\/config\.js$/.test(u.pathname)) {
+    e.respondWith(
+      fetch(r, { cache: 'no-store' })
+        .then((res) => {
+          // Se guarda con el mismo nombre que en la instalación, para que sin conexión salga la última
+          if (res && res.ok) {
+            const copia = res.clone();
+            caches.open(CACHE).then((c) => c.put(new URL('config.js', self.registration.scope).href, copia));
+          }
+          return res;
+        })
+        .catch(() => caches.match(new URL('config.js', self.registration.scope).href).then((m) => m || Response.error()))
+    );
+    return;
+  }
   // Lo propio de la app sale al instante de lo guardado en el móvil (abre mucho más rápido).
   // Las actualizaciones llegan con un sw.js nuevo: guarda la versión nueva entera y la app se recarga sola.
   if (u.origin === location.origin) {

@@ -2,8 +2,8 @@
    Los datos de la empresa salen de config.js (CFG.legal), así se ven también antes de entrar.
    Si cambias algo importante de estos textos, sube LEGAL_V: a todos se les pedirá aceptarlo otra vez
    y queda registrado quién lo aceptó y cuándo (tabla «aceptaciones», script 9). */
-const LEGAL_V = '3.0';
-const LEGAL_FECHA = '24 de noviembre de 2026';
+const LEGAL_V = '3.1';
+const LEGAL_FECHA = '25 de noviembre de 2026';
 const LG = () => {
   const L = (typeof CFG !== 'undefined' && CFG && CFG.legal) || {},
     f = (v, txt) => (v ? esc(v) : '<span class="lg-falta">[' + txt + ']</span>');
@@ -27,9 +27,10 @@ const LEGAL_DOCS = {
       '<h3>Qué datos guardamos y para qué</h3><ul>' +
       '<li><b>Tu cuenta:</b> nombre, usuario (o correo si lo elegiste) y contraseña cifrada. Para que puedas entrar y para saber quién hace cada cosa.</li>' +
       '<li><b>Tu trabajo en la app:</b> lo que creas, cambias o eliminas (fichas, compras, registros de APPCC, mermas, tareas, etiquetas) con fecha y autor. Lo exige el control de seguridad alimentaria y la organización de la cocina.</li>' +
-      '<li><b>Fotos y documentos</b> que subes (limpieza, albaranes). Pueden salir personas por casualidad: haz las fotos a la zona, no a compañeros.</li>' +
+      '<li><b>Fotos y documentos</b> que subes (platos, limpieza, albaranes). Pueden salir personas por casualidad: haz las fotos a la zona, no a compañeros.</li>' +
       '<li><b>Turnos y horarios</b> del equipo, si el restaurante los sube.</li>' +
-      '<li><b>Registro de aceptación</b> de estos textos (qué versión y cuándo).</li></ul>' +
+      '<li><b>Registro de aceptación</b> de estos textos (qué versión y cuándo).</li>' +
+      '<li><b>Estadísticas técnicas anónimas:</b> qué pantalla se abre, si hay conexión y los errores de la app, para detectar fallos. Sin tu nombre, sin cookies y con un identificador que cambia cada vez que abres la app.</li></ul>' +
       '<p>No pedimos datos de salud, bancarios, de localización ni tu correo si no quieres darlo. No hay publicidad, no vendemos datos y no hacemos perfiles.</p>' +
       '<h3>Base legal</h3><p>La relación laboral o de servicio con la empresa (art. 6.1.b RGPD), las obligaciones legales de higiene y trazabilidad de alimentos (art. 6.1.c) y el interés legítimo en organizar la cocina (art. 6.1.f).</p>' +
       '<h3>Inteligencia artificial</h3><p>El asistente y la lectura de albaranes usan la API de Gemini de Google. Solo se le envía lo necesario para cada consulta (la pregunta, datos de cocina y la foto o PDF que escaneas). Se usa el servicio de pago de la API, en cuyas condiciones Google no usa estos datos para entrenar sus modelos. Nosotros tampoco entrenamos ninguna IA con tus datos. Revisa siempre lo que propone la IA antes de guardarlo.</p>' +
@@ -59,7 +60,7 @@ const LEGAL_DOCS = {
   cookies: [
     'Cookies',
     () =>
-      '<p>Esta app <b>no usa cookies de publicidad, de análisis ni rastreadores de terceros</b>, y no carga nada de otras webs (ni fuentes de Google, ni estadísticas).</p>' +
+      '<p>Esta app <b>no usa cookies de publicidad, de análisis ni rastreadores de terceros</b>, y no carga nada de otras webs (ni fuentes de Google). Para detectar fallos envía estadísticas técnicas anónimas (pantalla, versión y errores) a PostHog, en servidores de la UE, sin cookies ni identificadores que duren más allá de cada visita.</p>' +
       '<p>Solo guarda en tu dispositivo lo imprescindible para funcionar, que la ley permite sin pedir consentimiento (art. 22.2 LSSI):</p><ul>' +
       '<li><b>Sesión:</b> para que no tengas que entrar cada vez (lo gestiona Supabase en el almacenamiento del navegador).</li>' +
       '<li><b>Preferencias:</b> tema claro u oscuro, último restaurante, formato de etiqueta, avisos vistos.</li>' +
@@ -81,9 +82,10 @@ const LEGAL_DOCS = {
       '<li><b>Supabase</b> (Supabase Inc.): base de datos, cuentas, archivos y funciones del servidor. Servidores en ' + d.region + '. Contrato de encargo (DPA) de Supabase.</li>' +
       '<li><b>Google</b> (Google Cloud EMEA / Google LLC): API de Gemini para el asistente y la lectura de albaranes, recetas y horarios. Servicio de pago, sin uso de datos para entrenamiento. Puede implicar transferencias internacionales con cláusulas contractuales tipo y el Marco de Privacidad de Datos UE-EE. UU.</li>' +
       '<li><b>GitHub</b> (GitHub Inc.): alojamiento de los archivos de la app (no guarda datos del restaurante).</li>' +
+      '<li><b>PostHog</b> (PostHog Inc., región UE, Fráncfort): estadísticas técnicas anónimas de uso y errores, sin cookies. Contrato de encargo (DPA) de PostHog.</li>' +
       (typeof CFG !== 'undefined' && CFG && CFG.turnstile ? '<li><b>Cloudflare</b> (Cloudflare Inc.): comprobación contra robots al crear una cuenta (Turnstile). Solo en esa pantalla.</li>' : '') +
       '</ul>' +
-      '<p>No hay otros servicios: ni estadísticas, ni publicidad, ni redes sociales. Si el restaurante conecta una impresora con el puente de impresión, ese ordenador es del propio restaurante.</p>',
+      '<p>No hay otros servicios: ni publicidad, ni redes sociales. Si el restaurante conecta una impresora con el puente de impresión, ese ordenador es del propio restaurante.</p>',
   ],
   licencias: [
     'Licencias',
