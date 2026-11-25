@@ -6,11 +6,16 @@
   'use strict';
   var CLAVE = 'phc_AMzaxKuPnJJtEC6N5QxNChDyaYpGXnQjCNiG6LAh6bLP'; // clave pública de proyecto (no es secreta)
   var DESTINO = 'https://eu.i.posthog.com/i/v0/e/';
-  var cfg = window.BBC_SUPABASE || {};
-  var entorno = cfg.entorno || 'desconocido';
   // Identificador anónimo que solo vive en memoria: cambia en cada carga de la app.
   var id = 'anon-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
   var enviados = 0;
+
+  // El entorno lo dice config.js, que carga después (defer): se lee en el momento de enviar.
+  function entorno() {
+    var cfg = window.BBC_SUPABASE || {};
+    if (cfg.entorno) return cfg.entorno;
+    return /pruebas/.test(location.pathname) ? 'pruebas' : 'produccion';
+  }
 
   function enviar(evento, props) {
     if (enviados++ > 50) return; // evita inundar PostHog si algo entra en bucle
@@ -21,15 +26,19 @@
       properties: Object.assign({
         $current_url: location.origin + location.pathname,
         $pathname: location.pathname,
-        entorno: entorno,
+        entorno: entorno(),
         version_app: window.BBC_VERSION || null,
         en_linea: navigator.onLine,
         $process_person_profile: false
       }, props || {})
     });
+    // Se envía como text/plain: es un tipo «simple» y no necesita permiso previo (CORS).
+    // Con application/json, Safari/iPhone descartaba los envíos sin avisar.
     try {
-      if (navigator.sendBeacon && navigator.sendBeacon(DESTINO, new Blob([cuerpo], { type: 'application/json' }))) return;
-      fetch(DESTINO, { method: 'POST', body: cuerpo, headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(function () {});
+      if (navigator.sendBeacon && navigator.sendBeacon(DESTINO, new Blob([cuerpo], { type: 'text/plain;charset=UTF-8' }))) return;
+    } catch (e) { /* sigue con fetch */ }
+    try {
+      fetch(DESTINO, { method: 'POST', body: cuerpo, headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, keepalive: true }).catch(function () {});
     } catch (e) { /* la analítica nunca debe romper la app */ }
   }
 
@@ -52,5 +61,7 @@
   });
 
   window.BBC_ANALITICA = { evento: enviar }; // por si se quieren medir acciones concretas más adelante
-  enviar('$pageview');
+  // La vista de página, cuando ya han cargado los scripts con defer (config.js incluido).
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { enviar('$pageview'); });
+  else enviar('$pageview');
 })();
