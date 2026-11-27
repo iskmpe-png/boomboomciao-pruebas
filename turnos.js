@@ -173,6 +173,7 @@ function vTurnos() {
     (actual ? '' : '<button class="btn small" type="button" data-act="tu-sem" data-n="0">Hoy</button>') +
     '<button class="btn small" type="button" data-act="tu-sem" data-n="7" aria-label="Semana siguiente">›</button></div>' +
     hoyMeTocaHTML() +
+    horarioEquipoHTML() +
     pushHTML() +
     (!edita && hay ? '<p class="hint">Puedes ver el cuadro de ' + (a === 'barra' ? 'barra' : 'cocina') + '; solo su encargado lo cambia.</p>' : '') +
     (!hay
@@ -189,6 +190,7 @@ function vTurnos() {
           : '')) +
     (puede(2) ? avisosPHTML() : '');
   pintaPush();
+  pintaHorarioEquipo();
   cargarPushIds();
 }
 /* Plantilla inicial: el cuadro de limpieza de la casa (cocina: cámaras y bodega) */

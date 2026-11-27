@@ -42,6 +42,8 @@ const diasMapa = (o) => {
 const TURNO_D = ['am', 'pm', 'completo', 'libre'];
 const nTurno = (t) => ({
   id: t.id,
+  /* Hoja del horario semanal (foto o PDF) */
+  hoja: t.hoja && t.hoja.ruta ? { ruta: String(t.hoja.ruta).slice(0, 200), nombre: String(t.hoja.nombre || '').slice(0, 120), tipo: t.hoja.tipo === 'pdf' ? 'pdf' : 'foto', tam: +t.hoja.tam || 0, subido: String(t.hoja.subido || ''), por: String(t.hoja.por || ''), pendiente: !!t.hoja.pendiente } : null,
   /* Horario de trabajo de la semana (de donde sale el reparto de la limpieza) */
   horario: (Array.isArray(t.horario) ? t.horario : []).filter((x) => x && x.nombre).slice(0, 60).map((x) => {
     const dias = {};
