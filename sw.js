@@ -96,7 +96,6 @@ const BASE = [
   "turnos.js",
   "reparto.js",
   "horario-equipo.js",
-  "horario-equipo.js",
   "cuadre.js",
   "aprobar.js",
   "consumo.js",
