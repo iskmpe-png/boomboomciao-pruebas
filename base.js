@@ -77,6 +77,7 @@ const SUBS = {
     ['alertas', 'Alertas'],
   ],
   control: [
+    ['club', 'Club'],
     ['consumo', 'Consumo y stock'],
     ['ingenieria', 'Ingeniería de menú'],
     ['manual', 'Manual del asistente'],

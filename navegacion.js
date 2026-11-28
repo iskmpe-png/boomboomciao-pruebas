@@ -46,7 +46,7 @@ const SECI = {
 const SUBS_TODO = JSON.parse(JSON.stringify(SUBS));
 const MENU_EQUIPO = { inicio: ['panel', 'turnos'], fichar: ['marcar', 'mishoras'], cocina: ['tareas', 'recetas', 'produccion', 'etiquetas', 'appcc'], papeles: ['firmar'], almacen: ['inventario', 'compras', 'mermas'] };
 /* Lo que solo ve el usuario maestro (y, en «Jornadas», también quien gestiona un área) */
-const SOLO_MAESTRO = { plan: 1, tablets: 1, enviar: 1 };
+const SOLO_MAESTRO = { plan: 1, tablets: 1, enviar: 1, club: 1 };
 function aplicarMenuRol() {
   const eq = !puede(2),
     extra = (SUBS.inicio || []).filter((x) => !SUBS_TODO.inicio.some((y) => y[0] === x[0]));
@@ -60,6 +60,7 @@ function aplicarMenuRol() {
   const m = esMaestro();
   if (SUBS.fichar) SUBS.fichar = SUBS_TODO.fichar.filter((x) => (SOLO_MAESTRO[x[0]] ? m : x[0] === 'jornadas' ? m || !eq : true)).map((x) => x.slice());
   if (SUBS.papeles) SUBS.papeles = SUBS_TODO.papeles.filter((x) => !SOLO_MAESTRO[x[0]] || m).map((x) => x.slice());
+  if (SUBS.control) SUBS.control = SUBS.control.filter((x) => !SOLO_MAESTRO[x[0]] || m);
   if (!SUBS[vista]) {
     vista = 'inicio';
     try {

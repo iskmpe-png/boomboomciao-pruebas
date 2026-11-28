@@ -66,5 +66,6 @@ y probar primero en el entorno de pruebas.
 - Estilo en `chaquetilla.css`; noche automática de 20:00 a 07:00.
 - Fichaje, tablet y usuario maestro: `fichaje.js`, `quiosco.js` y `010-fichaje.sql`.
 - Documentos y firma simple: `papeles.js` y `011-papeles.sql`.
-- Los dos scripts se ejecutan en la base **antes** de publicar la versión.
+- Club gratuito (prueba, alta cerrada por defecto): `club.html`, `socios.js` y `013-club.sql`.
+- Los scripts 010, 011 y 013 se ejecutan en la base **antes** de publicar la versión.
 - Pendiente antes de producción: textos de privacidad (fichaje y firma), prueba en el local y plan de copias.

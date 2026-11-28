@@ -109,6 +109,7 @@ function pintar() {
               tablets: 'vTablets',
               firmar: 'vPapeles',
               enviar: 'vEnviar',
+              club: 'vClub',
               consumo: 'vConsumo',
           })[pant]
         ];

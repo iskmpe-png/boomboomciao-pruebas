@@ -179,7 +179,7 @@ function vTurnos() {
     (!edita && hay ? '<p class="hint">Puedes ver el cuadro de ' + AREA_TU[a].toLowerCase() + '; solo su encargado lo cambia.</p>' : '') +
     (!hay
       ? vacio(
-          'Todavía no hay cuadro de ' + (a === 'barra' ? 'barra' : 'cocina'),
+          'Todavía no hay cuadro de ' + AREA_TU[a].toLowerCase(),
           'Crea el cuadro semanal de limpieza o súbelo con el horario de la semana: la app reparte AM y PM según quién trabaja. A cada persona le llegará un aviso al móvil el día que le toque.',
           edita ? '<div class="acciones" style="justify-content:center"><button class="btn primary" type="button" data-act="tu-crear">Crear el cuadro</button><button class="btn" type="button" data-act="tu-repartir">Subir el horario y repartir</button></div>' : '',
         )
@@ -272,7 +272,7 @@ V.addEventListener('click', (e) => {
     if (f) (a === 'tu-xlsx' ? excelLimpieza : imagenLimpieza)(f, tuSem);
     return;
   }
-  if (!puedeArea(areaTu())) return toast('Solo el encargado de ' + (areaTu() === 'barra' ? 'barra' : 'cocina') + ' puede cambiar este cuadro.');
+  if (!puedeArea(areaTu())) return toast('Solo el encargado de ' + AREA_TU[areaTu()].toLowerCase() + ' puede cambiar este cuadro.');
   if (a === 'tu-repartir') {
     abrirRepartir();
     return;
