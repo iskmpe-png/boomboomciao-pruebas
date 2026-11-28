@@ -112,6 +112,11 @@ function solicitudesHTML() {
     '</p><div class="acciones"><button class="btn primary small" type="button" data-act="tb-usuarios">Revisar y aprobar</button></div></section>'
   );
 }
+/* La pestaña «Tareas»: solo lo que hay que hacer */
+function vTareas() {
+  if ($('dl-equipo')) $('dl-equipo').innerHTML = nombresEquipo().map((n) => '<option value="' + esc(n) + '"></option>').join('');
+  $('vista').innerHTML = tareasHTML() + miHoyHTML();
+}
 function vTablon() {
   if ($('dl-equipo')) $('dl-equipo').innerHTML = nombresEquipo().map((n) => '<option value="' + esc(n) + '"></option>').join('');
   $('vista').innerHTML =

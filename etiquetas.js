@@ -187,7 +187,35 @@ function pintarEt() {
     b.textContent = d && d.copias > 1 ? 'Imprimir ' + d.copias + ' etiquetas' : 'Imprimir';
   });
 }
-const modoImp = () => (mem('bbc.impMod') === 'directo' ? 'directo' : 'movil');
+/* El modo lo decide el restaurante (quien gestiona); un teléfono puede salirse solo para él */
+const modoAqui = () => {
+  const o = mem('bbc.impAqui');
+  return o === 'movil' || o === 'directo' ? o : '';
+};
+const modoImp = () => modoAqui() || (S.ajustes.impMod === 'directo' ? 'directo' : 'movil');
+/* ¿Está respondiendo el puente? Se mira la cola: si algo lleva más de minuto y medio esperando, no */
+async function estadoPuente() {
+  const o = $('et-estado');
+  if (!o) return;
+  if (!enNube()) {
+    o.innerHTML = '<span class="est aviso">El modo directo necesita conexión y usuario</span>';
+    return;
+  }
+  const r = await sb.from('impresiones').select('estado,error,creado,impreso').eq('restaurante_id', rid).order('id', { ascending: false }).limit(30);
+  if (!$('et-estado')) return;
+  const l = r.data || [],
+    parados = l.filter((x) => x.estado === 'pendiente' && Date.now() - Date.parse(x.creado) > 90000),
+    ult = l.find((x) => x.estado === 'impresa');
+  $('et-estado').innerHTML = r.error
+    ? '<span class="est aviso">No se pudo comprobar la impresora</span>'
+    : parados.length
+      ? '<span class="est mal">El puente no responde: ' + parados.length + (parados.length === 1 ? ' envío esperando' : ' envíos esperando') + '</span>'
+      : l.length && l[0].estado === 'error'
+        ? '<span class="est mal">Último envío con error: ' + esc(l[0].error || 'revisa papel y tapa') + '</span>'
+        : ult
+          ? '<span class="est ok">Funcionando · última impresión ' + esc(fFecha(ult.impreso || ult.creado)) + '</span>'
+          : '<span class="est aviso">El puente aún no ha impreso nada</span>';
+}
 function opcionesEt(sel) {
   const guard = ordenados(S.etiquetas.filter((e) => !e.tipo && enArea(e)));
   return (
@@ -409,13 +437,17 @@ function vEtiquetas() {
     impresoraHTML() +
     '</div></div>';
   pintarEt();
+  if (modoImp() === 'directo') estadoPuente();
 }
 /* Cómo se imprime en este dispositivo */
 function impresoraHTML() {
   const m = modoImp();
   return (
-    '<details class="card et-impr"' + (mem('bbc.impVisto') ? '' : ' open') + '><summary><b>Impresora</b> <span class="hint">· ' + (m === 'directo' ? 'directo con un toque' : 'desde este móvil') + '</span></summary>' +
+    '<details class="card et-impr"' + (mem('bbc.impVisto') ? '' : ' open') + '><summary><b>Impresora</b> <span class="hint">· ' + (m === 'directo' ? 'directo con un toque' : 'desde el móvil') + (modoAqui() ? ' (solo en este teléfono)' : '') + '</span></summary>' +
+    (m === 'directo' ? '<p id="et-estado" aria-live="polite"><span class="est aviso">Comprobando la impresora…</span></p>' : '') +
+    '<p class="hint">' + (puede(2) ? 'Lo que elijas aquí vale para <b>todo el restaurante</b>: nadie tiene que configurar su móvil.' : 'El modo del restaurante lo pone quien lo gestiona. Si cambias esto, solo afecta a este teléfono.') + '</p>' +
     '<div class="seg" role="radiogroup" aria-label="Cómo imprimir"><button type="button" data-act="et-modo" data-m="movil" aria-pressed="' + (m === 'movil') + '">Desde el móvil</button><button type="button" data-act="et-modo" data-m="directo" aria-pressed="' + (m === 'directo') + '">Directo (un toque)</button></div>' +
+    (modoAqui() ? '<button class="link" type="button" data-act="et-modo" data-m="">Usar el modo del restaurante</button>' : '') +
     (m === 'movil'
       ? (esIOS()
           ? '<ol class="et-pasos"><li>Toca <b>Imprimir</b>: se abre el menú Compartir con la etiqueta en PDF. Elige <b>Imprimir</b>.</li><li>En <b>Impresora</b>, elige la <b>TD-4455DNWB</b> (móvil e impresora en el mismo Wi-Fi). Sin impresora elegida, el iPhone solo ofrece A4.</li><li>En <b>Tamaño del papel</b>, elige el de <b>51 × 26 mm</b> y escala 100 %. El iPhone lo recuerda para la próxima vez.</li><li>Si el tamaño 51 × 26 no aparece, hay que darlo de alta en la impresora (lo explica el aviso de abajo).</li></ol>'

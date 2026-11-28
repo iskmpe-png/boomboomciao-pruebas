@@ -14,7 +14,7 @@ function horarioEquipoHTML() {
   const a = areaTu(),
     h = hojaDe(tuSem, a),
     edita = puedeArea(a),
-    nom = a === 'barra' ? 'barra' : 'cocina';
+    nom = AREA_TU[a].toLowerCase();
   let cuerpo;
   if (!h) cuerpo = '<p class="hint">Todavía no hay horario semanal de ' + nom + '.' + (edita ? ' Sube la hoja en foto (JPG, PNG) o PDF para que todo el equipo la vea.' : '') + '</p>';
   else {
@@ -152,7 +152,7 @@ V.addEventListener('click', async (e) => {
     }
     return;
   }
-  if (!puedeArea(areaTu())) return toast('Solo el encargado de ' + (areaTu() === 'barra' ? 'barra' : 'cocina') + ' puede cambiar el horario.');
+  if (!puedeArea(areaTu())) return toast('Solo el encargado de ' + AREA_TU[areaTu()].toLowerCase() + ' puede cambiar el horario.');
   if (a === 'he-subir') {
     const i = document.createElement('input');
     i.type = 'file';

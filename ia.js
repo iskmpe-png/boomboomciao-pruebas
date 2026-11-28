@@ -144,6 +144,8 @@ function nube() {
     return;
   }
   if (CFG.entorno === 'pruebas') $('entorno').hidden = false;
+  /* Un dispositivo preparado como tablet de fichaje no pide usuario */
+  if (typeof quioscoClave === 'function' && quioscoClave()) return iniciarQuiosco();
   acceso('cargando');
   sb.auth.onAuthStateChange((ev, s) => {
     setTimeout(() => cambioSesion(s, ev), 0);

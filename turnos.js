@@ -14,7 +14,8 @@ let tuSem = lunesDe(hoy()),
 /* El cuadro de cocina se guarda con el lunes como id (2026-11-16) y el de barra con «barra-» delante */
 const idSem = (lun, a) => (a === 'barra' ? 'barra-' + lun : lun);
 const fechaSem = (t) => String(t.id).replace(/^barra-/, '');
-const areaTu = () => tuArea || (miArea() !== 'todas' ? miArea() : area === 'barra' ? 'barra' : 'cocina');
+const areaTu = () => tuArea || (miArea() !== 'todas' ? miArea() : area === 'barra' || area === 'sala' ? area : 'cocina');
+const AREA_TU = { cocina: 'Cocina', barra: 'Barra', sala: 'Sala' };
 const semanas = (a) => {
   a = a || areaTu();
   const re = a === 'barra' ? /^barra-\d{4}-\d{2}-\d{2}$/ : /^\d{4}-\d{2}-\d{2}$/;
@@ -37,7 +38,7 @@ function semanaEditable(lun, a) {
   return d;
 }
 /* Las filas de hoy de las dos áreas (para «Hoy te toca» y APPCC) */
-const filasHoy = () => ['cocina', 'barra'].reduce((l, a) => l.concat((semanaDe(lunesDe(hoy()), a).doc || { filas: [] }).filas), []);
+const filasHoy = () => ['cocina', 'barra', 'sala'].reduce((l, a) => l.concat((semanaDe(lunesDe(hoy()), a).doc || { filas: [] }).filas), []);
 const idFila = () => 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 /* ---- Quién es quién: lo escrito en el horario contra los nombres del equipo ---- */
 const nrmP = (s) => norm(String(s || '').replace(/\(.*?\)/g, ' '));
@@ -107,7 +108,7 @@ function filaHTML(f, k, lun) {
   const hoyD = lun === lunesDe(hoy()) ? new Date().getDay() : -1;
   return (
     '<section class="card turno" data-fila="' + esc(f.id) + '">' +
-    '<div class="hoja-l"><div class="hoja-t"><input id="tu-t' + k + '" type="text" data-tf="tarea" aria-label="Nombre de la tarea" value="' + esc(f.tarea) + '" placeholder="LIMPIEZA CÁMARAS Y BODEGA"><span>Boom Boom Ciao · ' + (areaTu() === 'barra' ? 'Barra' : 'Cocina') + ' · Semana del ' + esc(fRango(lun)) + '</span></div>' +
+    '<div class="hoja-l"><div class="hoja-t"><input id="tu-t' + k + '" type="text" data-tf="tarea" aria-label="Nombre de la tarea" value="' + esc(f.tarea) + '" placeholder="LIMPIEZA CÁMARAS Y BODEGA"><span>Boom Boom Ciao · ' + AREA_TU[areaTu()] + ' · Semana del ' + esc(fRango(lun)) + '</span></div>' +
     '<table class="tu-tabla"><thead><tr><th>DÍA</th><th>AM</th><th>PM</th></tr></thead><tbody>' +
     ORDEN_SEMANA.map(
       (d) =>
@@ -168,14 +169,14 @@ function vTurnos() {
   $('vista').dataset.area = a;
   $('vista').innerHTML =
     '<div class="bar tu-bar" data-libre><div class="seg" role="group" aria-label="Área">' +
-    ['cocina', 'barra'].map((x) => '<button type="button" class="seg-b' + (x === a ? ' on' : '') + '" data-act="tu-area" data-a="' + x + '" aria-pressed="' + (x === a) + '">' + (x === 'barra' ? 'Barra' : 'Cocina') + '</button>').join('') +
+    ['cocina', 'barra', 'sala'].map((x) => '<button type="button" class="seg-b' + (x === a ? ' on' : '') + '" data-act="tu-area" data-a="' + x + '" aria-pressed="' + (x === a) + '">' + AREA_TU[x] + '</button>').join('') +
     '</div><button class="btn small" type="button" data-act="tu-sem" data-n="-7" aria-label="Semana anterior">‹</button><b class="grow tu-rango">Semana del ' + esc(fRango(tuSem)) + (actual ? ' <span class="pill ok">Esta semana</span>' : '') + '</b>' +
     (actual ? '' : '<button class="btn small" type="button" data-act="tu-sem" data-n="0">Hoy</button>') +
     '<button class="btn small" type="button" data-act="tu-sem" data-n="7" aria-label="Semana siguiente">›</button></div>' +
     hoyMeTocaHTML() +
     horarioEquipoHTML() +
     pushHTML() +
-    (!edita && hay ? '<p class="hint">Puedes ver el cuadro de ' + (a === 'barra' ? 'barra' : 'cocina') + '; solo su encargado lo cambia.</p>' : '') +
+    (!edita && hay ? '<p class="hint">Puedes ver el cuadro de ' + AREA_TU[a].toLowerCase() + '; solo su encargado lo cambia.</p>' : '') +
     (!hay
       ? vacio(
           'Todavía no hay cuadro de ' + (a === 'barra' ? 'barra' : 'cocina'),
@@ -195,6 +196,7 @@ function vTurnos() {
 }
 /* Plantilla inicial: el cuadro de limpieza de la casa (cocina: cámaras y bodega) */
 function plantillaTurnos(a) {
+  if (a === 'sala') return [{ id: idFila(), tarea: 'MONTAJE DE SALA Y TERRAZA', horaAm: '12:00', horaPm: '19:00', nota: '', excluir: '', am: {}, pm: {} }];
   if (a === 'barra') return [{ id: idFila(), tarea: 'LIMPIEZA DE BARRA', horaAm: '10:00', horaPm: '17:00', nota: 'Sube las fotos en APPCC › Limpieza.', excluir: '', am: {}, pm: {} }];
   return [
     {

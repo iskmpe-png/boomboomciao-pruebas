@@ -16,7 +16,7 @@ function guardar(col, obj, ya) {
     return;
   }
   if (miArea() !== 'todas' && (col === 'productos' || col === 'platos' || col === 'turnos')) {
-    const a = col === 'turnos' ? (/^barra-/.test(obj.id) ? 'barra' : 'cocina') : areaDe(obj);
+    const a = col === 'turnos' ? (/^barra-/.test(obj.id) ? 'barra' : /^sala-/.test(obj.id) ? 'sala' : 'cocina') : areaDe(obj);
     if (a !== miArea()) {
       estado('Sin guardar: es de ' + a);
       toast('Tu usuario es de ' + miArea() + ': no puede cambiar cosas de ' + a + '.');

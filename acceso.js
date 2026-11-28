@@ -422,7 +422,7 @@ function cambioSesion(s, ev) {
   entrarNube();
 }
 let entroRapido = false;
-const firmaMios = (l) => JSON.stringify(l.map((x) => [x.id, x.rol, x.area]).sort());
+const firmaMios = (l) => JSON.stringify(l.map((x) => [x.id, x.rol, x.area, !!x.maestro]).sort());
 function entrarSinRed(y) {
   let l = [];
   try {
@@ -449,8 +449,9 @@ function entrarSinRed(y) {
 async function entrarNube(verificar) {
   try {
     const pide = (c) => sb.from('miembros').select(c).eq('user_id', yo.id);
-    const [m0, q, p] = await Promise.all([pide('restaurante_id,rol,area,estado'), sb.from('restaurantes').select('id,nombre'), sb.rpc('puedo_crear')]);
+    const [m0, q, p] = await Promise.all([pide('restaurante_id,rol,area,estado,maestro'), sb.from('restaurantes').select('id,nombre'), sb.rpc('puedo_crear')]);
     let m = m0;
+    if (m.error && !esRed(m.error)) m = await pide('restaurante_id,rol,area,estado');
     if (m.error && !esRed(m.error)) m = await pide('restaurante_id,rol,area');
     if (m.error && !esRed(m.error)) m = await pide('restaurante_id,rol');
     if (m.error) throw m.error;
@@ -463,7 +464,7 @@ async function entrarNube(verificar) {
     pendientes = filas.filter((x) => x.estado === 'pendiente').map((x) => nm[x.restaurante_id] || 'tu restaurante');
     const nuevos = filas
       .filter((x) => !x.estado || x.estado === 'activo')
-      .map((x) => ({ id: x.restaurante_id, rol: x.rol, area: x.area || 'todas', nombre: nm[x.restaurante_id] || 'Restaurante' }))
+      .map((x) => ({ id: x.restaurante_id, rol: x.rol, area: x.area || 'todas', maestro: x.rol === 'dueno' || !!x.maestro, nombre: nm[x.restaurante_id] || 'Restaurante' }))
       .sort((a, z) => a.nombre.localeCompare(z.nombre, 'es'));
     if (verificar) {
       /* Comprobación por detrás del arranque rápido */
@@ -526,9 +527,11 @@ function iniciarNube(mio) {
   };
   const d = sbDb(rid);
   remoto(d);
+  maestroV = mio.rol === 'dueno' || !!mio.maestro;
   setNivel(ROLNIV[mio.rol]);
   fijarArea(mio.area);
-  $('rol').textContent = mio.nombre + ' · ' + (mio.rol === 'cocina' ? rolTxt(mio.rol, mio.area) : ROLES[mio.rol] + (mio.area === 'cocina' || mio.area === 'barra' ? ' de ' + mio.area : ''));
+  $('rol').textContent = mio.nombre + ' · ' + (mio.rol === 'cocina' ? rolTxt(mio.rol, mio.area) : ROLES[mio.rol] + (AREAS[mio.area] && mio.area !== 'todas' ? ' de ' + mio.area : '')) + (maestroV && mio.rol !== 'dueno' ? ' · Maestro' : '');
+  if (typeof pintaCabecera === 'function') pintaCabecera();
   $('btn-restaurar').hidden = nivel !== 'admin';
   $('m-cuenta').hidden = false;
   $('cu-nombre').textContent = yo.nombre + (esUsuario(yo.email) ? ' · ' + verCuenta(yo.email) : '');

@@ -45,8 +45,26 @@ const UD = { kg: 'g', l: 'ml', ud: 'ud' },
   UDI = { kg: 'kg', l: 'L', ud: 'ud' };
 const SUBS = {
   inicio: [
-    ['panel', 'Panel'],
+    ['panel', 'Hoy'],
     ['turnos', 'Turnos y avisos'],
+  ],
+  fichar: [
+    ['marcar', 'Fichar'],
+    ['mishoras', 'Mis horas'],
+    ['jornadas', 'Jornadas'],
+    ['plan', 'Horarios'],
+    ['tablets', 'Maestro'],
+  ],
+  cocina: [
+    ['tareas', 'Tareas'],
+    ['recetas', 'Recetas'],
+    ['produccion', 'Producción'],
+    ['etiquetas', 'Etiquetas'],
+    ['appcc', 'APPCC'],
+  ],
+  papeles: [
+    ['firmar', 'Mis papeles'],
+    ['enviar', 'Enviar'],
   ],
   carta: [
     ['platos', 'Platos'],
@@ -57,12 +75,6 @@ const SUBS = {
     ['productos', 'Productos'],
     ['comparar', 'Comparar'],
     ['alertas', 'Alertas'],
-  ],
-  cocina: [
-    ['recetas', 'Recetas'],
-    ['produccion', 'Producción'],
-    ['etiquetas', 'Etiquetas'],
-    ['appcc', 'APPCC'],
   ],
   control: [
     ['consumo', 'Consumo y stock'],
@@ -77,7 +89,7 @@ const SUBS = {
     ['mermas', 'Mermas'],
   ],
 };
-const sub = { inicio: 'panel', carta: 'platos', precios: 'productos', cocina: 'recetas', control: 'consumo', almacen: 'inventario' };
+const sub = { inicio: 'panel', fichar: 'marcar', papeles: 'firmar', carta: 'platos', precios: 'productos', cocina: 'tareas', control: 'consumo', almacen: 'inventario' };
 const LEG = {
   'carta/platos': 'carta',
   'carta/elaboraciones': 'carta',
@@ -184,8 +196,9 @@ function mem(k, v) {
 }
 /* Zona de trabajo de este dispositivo: 'cocina', 'barra' o '' (todo). La recuerda cada persona. */
 let area = mem('bbc.area');
-if (area !== 'barra' && area !== '') area = 'cocina';
-const enArea = (x) => !area || (area === 'barra' ? x.area === 'barra' : x.area !== 'barra');
+if (area !== 'barra' && area !== 'sala' && area !== '') area = 'cocina';
+/* La sala no tiene productos ni platos propios: los ve todos */
+const enArea = (x) => !area || area === 'sala' || (area === 'barra' ? x.area === 'barra' : x.area !== 'barra');
 const areaNueva = () => (area === 'barra' ? 'barra' : '');
 let tt;
 function toast(t) {

@@ -60,3 +60,11 @@ La primera cuenta que cree un restaurante queda como administradora de la plataf
 
 Subir el número de versión en `sw.js` (`CACHE = 'bbc-vN'`) para que los dispositivos descarguen la versión nueva,
 y probar primero en el entorno de pruebas.
+
+## Versión 4.0 «Chaquetilla» (en pruebas desde el 28-11-2026)
+
+- Estilo en `chaquetilla.css`; noche automática de 20:00 a 07:00.
+- Fichaje, tablet y usuario maestro: `fichaje.js`, `quiosco.js` y `010-fichaje.sql`.
+- Documentos y firma simple: `papeles.js` y `011-papeles.sql`.
+- Los dos scripts se ejecutan en la base **antes** de publicar la versión.
+- Pendiente antes de producción: textos de privacidad (fichaje y firma), prueba en el local y plan de copias.

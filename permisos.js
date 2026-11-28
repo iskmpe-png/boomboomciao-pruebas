@@ -147,11 +147,17 @@ const puede = (n) => LV[nivel] >= n;
 /* ---- Áreas: un encargado de barra no cambia lo de cocina, y al revés ---- */
 let miAreaV = 'todas';
 const miArea = () => miAreaV;
-const areaDe = (x) => (x === 'barra' || (x && x.area === 'barra') ? 'barra' : 'cocina');
+const areaDe = (x) => {
+  const a = typeof x === 'string' ? x : x && x.area;
+  return a === 'barra' || a === 'sala' ? a : 'cocina';
+};
+/* Usuario maestro: el dueño, o quien el dueño haya nombrado. La base de datos lo comprueba también. */
+let maestroV = false;
+const esMaestro = () => maestroV;
 /* ¿Puede este usuario cambiar algo de esa área? (a: 'barra', 'cocina', '' o un producto/plato) */
 const puedeArea = (a) => puede(2) && (miAreaV === 'todas' || areaDe(a) === miAreaV);
 function fijarArea(a) {
-  miAreaV = a === 'cocina' || a === 'barra' ? a : 'todas';
+  miAreaV = a === 'cocina' || a === 'barra' || a === 'sala' ? a : 'todas';
   if (miAreaV !== 'todas') {
     /* Cada uno trabaja en su zona por defecto */
     area = miAreaV;

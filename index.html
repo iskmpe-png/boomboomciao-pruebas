@@ -6,7 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://eu.i.posthog.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <title>Boom Boom Ciao</title>
 <meta name="description" content="Gestión de cocina: escandallos, precios, recetas, inventario y mermas.">
-<meta name="theme-color" content="#2D3661">
+<meta name="theme-color" content="#F6F0E4">
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="manifest" href="manifest.webmanifest">
@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Boom Boom Ciao">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="stylesheet" href="fuentes.css?v=30">
 <link rel="stylesheet" href="inicio.css?v=30">
 <link rel="stylesheet" href="base.css?v=30">
@@ -25,6 +25,7 @@
 <link rel="stylesheet" href="retoques-movil.css?v=30">
 <link rel="stylesheet" href="zz-estilo.css?v=30">
 <link rel="stylesheet" href="zzz-pomodoro.css?v=30">
+<link rel="stylesheet" href="chaquetilla.css?v=40">
 </head>
 <body>
 
@@ -33,9 +34,8 @@
 <div class="wrap">
   <header class="top">
     <button class="btn small" id="btn-menu" type="button" aria-controls="menu" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menú</button>
-    <h1><img src="logo-oro.png" alt="Boom Boom Ciao" width="92" height="39"></h1>
-    <span class="voz"><span class="voz-t">Gestión de cocina</span><small id="rol"></small></span>
-    <select id="area-sel" class="area-sel" aria-label="Zona de trabajo"><option value="cocina">Cocina</option><option value="barra">Barra</option><option value="">Todo</option></select>
+    <div class="saludo"><small id="saludo-sub"></small><h1 id="saludo">Boom Boom Ciao</h1><small id="rol"></small></div>
+    <select id="area-sel" class="area-sel" aria-label="Zona de trabajo"><option value="cocina">Cocina</option><option value="barra">Barra</option><option value="sala">Sala</option><option value="">Todo</option></select>
     <button class="btn small" id="btn-buscar" type="button" aria-label="Buscar en toda la app" title="Buscar (Ctrl + K)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
   </header>
   <div class="subs" id="subs" hidden></div>
@@ -61,7 +61,7 @@
   <div class="m-pie" id="m-des" hidden><span class="lbl">Último cambio</span><button class="btn small" id="btn-des-menu" type="button">Deshacer</button></div>
   <div class="m-pie" id="m-copia" hidden><span class="lbl">Copia de datos</span><span class="m-bts"><button class="btn small" id="btn-copia" type="button">Descargar</button><button class="btn small" id="btn-restaurar" type="button" hidden>Restaurar</button></span><input id="f-copia" type="file" accept=".json,application/json" hidden></div>
   <div class="m-pie"><span class="lbl">Ajustes</span><button class="btn small" id="btn-ajustes" type="button">Apariencia y mi cuenta</button></div>
-  <div class="m-pie"><span class="lbl">Versión</span><span class="m-bts"><span id="m-ver">Pomodoro 3.0</span><button class="btn small" id="btn-reparar" type="button" title="Borra la copia guardada en este dispositivo y descarga la última versión">Actualizar</button></span><span class="hint m-tirar">Para actualizar, desliza la pantalla hacia abajo desde arriba.</span></div>
+  <div class="m-pie"><span class="lbl">Versión</span><span class="m-bts"><span id="m-ver">Chaquetilla 4.0</span><button class="btn small" id="btn-reparar" type="button" title="Borra la copia guardada en este dispositivo y descarga la última versión">Actualizar</button></span><span class="hint m-tirar">Para actualizar, desliza la pantalla hacia abajo desde arriba.</span></div>
 </aside>
 <div id="toast" role="status" hidden></div>
 <div id="cocina" hidden></div>
@@ -69,6 +69,7 @@
 <div id="entorno" hidden>ENTORNO DE PRUEBAS</div>
 <div id="usuarios" hidden role="dialog" aria-modal="true" aria-label="Usuarios"></div>
 <div id="acceso" hidden></div>
+<div id="quiosco" hidden></div>
 <div id="multi" hidden role="dialog" aria-modal="true" aria-label="Exportar varios"></div>
 
 <!-- Configuración del entorno y librería de la base de datos -->
@@ -169,6 +170,10 @@
 <script src="mi-cuenta.js?v=30" defer></script>
 <script src="usuarios.js?v=30" defer></script>
 <script src="ia.js?v=30" defer></script>
+<script src="hoy.js?v=40" defer></script>
+<script src="fichaje.js?v=40" defer></script>
+<script src="quiosco.js?v=40" defer></script>
+<script src="papeles.js?v=40" defer></script>
 <script src="arranque.js?v=30" defer></script>
 </body>
 </html>

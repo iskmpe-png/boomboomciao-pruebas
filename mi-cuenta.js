@@ -24,8 +24,8 @@ function verCuentaPanel(msg) {
     capaTop('Mi cuenta', nom ? nom + (usu ? ' · ' + usu : '') : 'Ajustes de este dispositivo') +
       '<div class="col mc">' +
       '<section class="card"><h3>Apariencia</h3><div class="seg" role="radiogroup" aria-label="Tema">' +
-      [['light', 'Claro'], ['dark', 'Oscuro'], ['auto', 'Automático']].map(([k, n]) => '<button type="button" data-mc-tema="' + k + '" aria-pressed="' + (t === k) + '">' + n + '</button>').join('') +
-      '</div><p class="hint">Automático sigue el modo claro u oscuro del móvil.</p></section>' +
+      [['light', 'Día'], ['dark', 'Noche'], ['auto', 'Automático']].map(([k, n]) => '<button type="button" data-mc-tema="' + k + '" aria-pressed="' + (t === k) + '">' + n + '</button>').join('') +
+      '</div><p class="hint">Automático pone el modo noche de 20:00 a 07:00, o si el móvil ya está en oscuro.</p></section>' +
       (conCuenta()
         ? '<section class="card"><h3>Contraseña</h3><form id="form-mc-clave" class="col" novalidate>' +
           '<div class="field"><label for="mc-act">Contraseña actual</label><input id="mc-act" type="password" autocomplete="current-password"></div>' +

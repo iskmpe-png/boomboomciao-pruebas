@@ -225,7 +225,12 @@ V.addEventListener('click', (e) => {
     b.classList.toggle('on', k < 0);
     pintarEt();
   } else if (a === 'et-modo') {
-    mem('bbc.impMod', b.dataset.m);
+    if (puede(2) && b.dataset.m) {
+      mem('bbc.impAqui', '');
+      S.ajustes.impMod = b.dataset.m;
+      guardar('ajustes', S.ajustes, true);
+      toast('Modo de impresión cambiado para todo el restaurante.');
+    } else mem('bbc.impAqui', b.dataset.m);
     mem('bbc.impVisto', '');
     vEtiquetas();
   } else if (a === 'et-deshacer') {

@@ -1,6 +1,6 @@
 /* ---- Detalles de la interfaz 3.0: barra de secciones abajo, deslizar para actualizar y ajustes ---- */
 /* Barra de abajo en el móvil: las secciones de uso diario a un toque y «Más» abre el menú */
-const TAB_ORDEN = ['inicio', 'carta', 'cocina', 'almacen'];
+const TAB_ORDEN = ['inicio', 'cocina', 'fichar', 'papeles'];
 function pintarTabbar() {
   const t = $('tabbar');
   if (!t) return;
@@ -9,7 +9,7 @@ function pintarTabbar() {
     secs
       .map(
         (k) =>
-          '<a href="#' + k + '-' + sub[k] + '" class="tb-i"' + (vista === k ? ' aria-current="page"' : '') + ' data-sec="' + k + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + SECI[k] + '</svg><span>' + SECN[k] + '</span></a>',
+          '<a href="#' + k + '-' + sub[k] + '" class="tb-i' + (k === 'fichar' ? ' tb-c' : '') + '"' + (vista === k ? ' aria-current="page"' : '') + ' data-sec="' + k + '">' + (k === 'fichar' ? '<b>' : '') + '<svg viewBox="0 0 24 24" aria-hidden="true">' + SECI[k] + '</svg>' + (k === 'fichar' ? '</b>' : '') + '<span>' + SECN[k] + '</span></a>',
       )
       .join('') +
     '<button type="button" class="tb-i" id="tb-mas" aria-label="Más secciones y ajustes" aria-controls="menu"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>Más</span></button>';

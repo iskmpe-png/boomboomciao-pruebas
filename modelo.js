@@ -16,6 +16,8 @@ const nAjustes = (a) => ({
   archivados: (a && Array.isArray(a.archivados) ? a.archivados : []).filter((m) => /^\d{4}-\d{2}$/.test(m)),
   /* Horas que se guardan las fotos de limpieza (de 1 a 48) y avisos personalizados al móvil */
   horasFotos: Number(a && a.horasFotos) >= 1 ? Math.min(48, Math.round(Number(a.horasFotos))) : 24,
+  /* Cómo imprime este restaurante las etiquetas: desde cada móvil o por el puente */
+  impMod: a && a.impMod === 'directo' ? 'directo' : 'movil',
   avisos: (a && Array.isArray(a.avisos) ? a.avisos : []).filter((x) => x && x.id).slice(0, 40).map(nAvisoP),
 });
 const HORA = (h) => (/^\d{2}:\d{2}$/.test(h || '') ? h : '');

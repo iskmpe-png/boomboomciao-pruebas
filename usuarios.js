@@ -18,14 +18,14 @@ function cerrarUsuarios() {
   $('btn-menu').focus();
 }
 /* Cómo se llama el rol de cada persona: en barra, «Bartender»; en cocina, «Cocinero» */
-const AREAS = { cocina: 'Cocina', barra: 'Barra', todas: 'Cocina y barra' };
+const AREAS = { cocina: 'Cocina', barra: 'Barra', sala: 'Sala', todas: 'Todas las áreas' };
 function rolTxt(rol, area) {
-  if (rol === 'cocina') return area === 'barra' ? 'Bartender' : area === 'cocina' ? 'Cocinero' : 'Cocina y barra';
+  if (rol === 'cocina') return area === 'barra' ? 'Bartender' : area === 'cocina' ? 'Cocinero' : area === 'sala' ? 'Camarero' : 'Equipo';
   return ROLES[rol] || rol;
 }
 /* Opciones de rol según el área elegida */
 function opsRol(sel, area, soyD) {
-  const l = [['cocina', area === 'barra' ? 'Bartender' : area === 'cocina' ? 'Cocinero' : 'Equipo (cocina y barra)']];
+  const l = [['cocina', area === 'barra' ? 'Bartender' : area === 'cocina' ? 'Cocinero' : area === 'sala' ? 'Camarero' : 'Equipo (todas las áreas)']];
   if (soyD) l.push(['encargado', 'Encargado'], ['dueno', 'Dueño']);
   l.push(['consulta', 'Solo consulta']);
   return l.map((x) => '<option value="' + x[0] + '"' + (x[0] === sel ? ' selected' : '') + '>' + x[1] + '</option>').join('');

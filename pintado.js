@@ -69,6 +69,7 @@ function pintar() {
   pant = LEG[vista + '/' + sub[vista]] || sub[vista];
   if (typeof chatFab === 'function') chatFab();
   if (typeof pintaRecordatorio === 'function') pintaRecordatorio();
+  if (typeof pintaCabecera === 'function') pintaCabecera();
   if (!listo()) return;
   pintarListas();
   // Por nombre: si un módulo no llegó a cargar (p. ej. un 503 de GitHub Pages), se avisa en vez de lanzar ReferenceError.
@@ -100,6 +101,14 @@ function pintar() {
               grupo: 'vGrupo',
               manual: 'vManual',
               turnos: 'vTurnos',
+              tareas: 'vTareas',
+              marcar: 'vMarcar',
+              mishoras: 'vMisHoras',
+              jornadas: 'vJornadas',
+              plan: 'vPlan',
+              tablets: 'vTablets',
+              firmar: 'vPapeles',
+              enviar: 'vEnviar',
               consumo: 'vConsumo',
           })[pant]
         ];
@@ -109,6 +118,12 @@ function pintar() {
     return;
   }
   fn();
+  if (pant === 'panel' && typeof hoyHTML === 'function') {
+    $('vista').insertAdjacentHTML('afterbegin', hoyHTML());
+    /* Primero lo de hoy: la guía de puesta en marcha queda al final */
+    const pp = $('vista').querySelector(':scope > .pp');
+    if (pp) $('vista').appendChild(pp);
+  }
 }
 function refrescar() {
   const a = document.activeElement,
