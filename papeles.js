@@ -181,7 +181,7 @@ async function leerEnviados() {
   PA.enviados = r.data || [];
   PA.leidoE = Date.now();
 }
-function enviadosHTML() {
+function papelesEnviadosHTML() {
   if (!PA.enviados) return '<p class="hint">Cargando…</p>';
   if (!PA.enviados.length) return '<p class="hint">Aún no has enviado ningún documento.</p>';
   return PA.enviados
@@ -209,7 +209,7 @@ function enviarHTML() {
     '<fieldset class="col"><legend>Para quién</legend><div class="acciones">' + ['cocina', 'barra', 'sala'].map((a) => '<button type="button" class="btn small" data-pa="area" data-a="' + a + '">Toda ' + (a === 'barra' ? 'la barra' : a === 'sala' ? 'la sala' : 'la cocina') + '</button>').join('') + '</div>' + personasMarcables('pa-p') + '</fieldset>' +
     '<button class="btn grande primary" type="submit">Enviar</button><p class="hint" id="pa-emsg" role="status"></p></form></section>' +
     '<p class="est aviso">Firma simple: úsala para entregas, políticas y acuses. Contratos, anexos y finiquitos necesitan firma avanzada de un proveedor (pendiente de contratar). Las nóminas pagadas por banco no necesitan firma.</p>' +
-    '<h3>Enviados</h3><div class="col" id="pa-lista">' + enviadosHTML() + '</div>'
+    '<h3>Enviados</h3><div class="col" id="pa-lista">' + papelesEnviadosHTML() + '</div>'
   );
 }
 function vEnviar() {
@@ -219,7 +219,7 @@ function vEnviar() {
   if (Date.now() - PA.leidoE < 15000 && PA.enviados) return;
   leerEnviados()
     .then(() => {
-      if ($('pa-lista')) $('pa-lista').innerHTML = enviadosHTML();
+      if ($('pa-lista')) $('pa-lista').innerHTML = papelesEnviadosHTML();
     })
     .catch((e) => {
       if ($('pa-lista')) $('pa-lista').innerHTML = '<p class="est mal">' + esc(errPa(e)) + '</p>';
